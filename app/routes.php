@@ -11,6 +11,7 @@ use Slim\Interfaces\RouteCollectorProxyInterface as Group;
 
 use App\Application\Controllers\AuthController;
 use App\Application\Controllers\DashboardController;
+use App\Application\Controllers\MaterialController;
 
 
 return function (App $app) {
@@ -37,6 +38,9 @@ return function (App $app) {
 
     // Route untuk Dashboard
     $app->get('/dashboard', DashboardController::class . ':showDashboard');
+
+    $app->get('/materials', MaterialController::class . ':index');
+    $app->get('/api/materials', MaterialController::class . ':data');
 
     // Route untuk Logout
     $app->get('/logout', function ($request, $response) {

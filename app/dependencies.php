@@ -15,6 +15,7 @@ use Twig\Loader\FilesystemLoader;
 
 use App\Application\Controllers\AuthController;
 use App\Application\Controllers\DashboardController;
+use App\Application\Controllers\MaterialController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -60,6 +61,11 @@ return function (ContainerBuilder $containerBuilder) {
             $view = $c->get('view');
             $db = $c->get('db');
             return new DashboardController($view, $db);
+        },
+        MaterialController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            $db = $c->get('db');
+            return new MaterialController($view, $db);
         },
     ]);
 };

@@ -1,0 +1,93 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Kelola Materi{% endblock %}
+{% block page_title %}Daftar Materi{% endblock %}
+
+{# Tambahkan CSS khusus untuk DataTables di <head> #}
+{% block head_styles %}
+  <link rel="stylesheet" href="/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+  <link rel="stylesheet" href="/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Semua Materi Tersedia</h3>
+    <div class="card-tools">
+        <a href="/materials/create" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Tambah Materi Baru
+        </a>
+    </div>
+  </div>
+  <div class="card-body">
+    <table id="materials-table" class="table table-bordered table-striped">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Judul Materi</th>
+        <th>Tipe</th>
+        <th>Dibuat Oleh</th>
+        <th>Tanggal Dibuat</th>
+        <th>Aksi</th>
+      </tr>
+      </thead>
+      <tbody>
+        {# Isi tabel akan dimuat oleh AJAX #}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+
+<script>
+$(function () {
+  $('#materials-table').DataTable({
+    "processing": true, // Tampilkan 'processing...' saat loading
+    "serverSide": false, // Kita pakai client-side dulu untuk simpel
+    "ajax": {
+        "url": "/api/materials", // Endpoint API kita
+        "type": "GET"
+    },
+    "columns": [
+        { "data": "id" },
+        { "data": "title" },
+        { "data": "type" },
+        { "data": "creator_name" },
+        { 
+            "data": "create_time",
+            "render": function(data, type, row) {
+                // Format tanggal jadi lebih cantik
+                return new Date(data).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+        },
+        {
+            "data": "id",
+            "render": function(data, type, row) {
+                // Buat tombol aksi
+                return `
+                    <a href="/materials/assign/${data}" class="btn btn-info btn-xs" title="Tugaskan"><i class="fas fa-user-plus"></i></a>
+                    <a href="/materials/edit/${data}" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
+                    <button class="btn btn-danger btn-xs" onclick="deleteMaterial(${data})" title="Hapus"><i class="fas fa-trash"></i></button>
+                `;
+            },
+            "orderable": false // Kolom aksi tidak perlu bisa di-sort
+        }
+    ],
+    "responsive": true, 
+    "lengthChange": false, 
+    "autoWidth": false,
+  });
+});
+
+function deleteMaterial(id) {
+    // Nanti kita isi fungsi hapus dengan AJAX + SweetAlert
+    Swal.fire('Fitur Hapus', `Anda mencoba menghapus materi dengan ID: ${id}`, 'info');
+}
+</script>
+{% endblock %}

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="/plugins/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" href="/dist/css/adminlte.min.css">
+    {% block head_styles %}{% endblock %} {# <-- TAMBAHKAN INI #}
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
@@ -40,6 +41,16 @@
               <p>Dashboard</p>
             </a>
           </li>
+          {# MENU KHUSUS ADMIN #}
+          {% if session.user_role == 'Admin' %}
+          <li class="nav-header">ADMINISTRATION</li>
+          <li class="nav-item">
+              <a href="/materials" class="nav-link">
+                  <i class="nav-icon fas fa-book"></i>
+                  <p>Kelola Materi</p>
+              </a>
+          </li>
+          {% endif %}
           <li class="nav-item">
             <a href="/logout" class="nav-link">
               <i class="nav-icon fas fa-sign-out-alt"></i>

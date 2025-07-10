@@ -32,25 +32,38 @@ class AuthController
     public function login(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
-        $email = $data['email'];
-        $password = $data['password'];
+        $email = $data['email'] ?? '';
+        $password = $data['password'] ?? '';
 
-        // 1. Cari user berdasarkan email
-        $user = $this->db->get('tbl_users', '*', ['email' => $email]);
+        // Cari user berdasarkan email
+        $user = $this->db->get('tbl_users', [
+            'id',
+            'name',
+            'email',
+            'password',
+            'role'
+        ], [
+            'email' => $email,
+            'archived' => 0 // Pastikan user tidak di-soft-delete
+        ]);
 
-        // 2. Verifikasi user dan password
+        // Verifikasi user dan password
         if ($user && password_verify($password, $user['password'])) {
-            // Password cocok, login berhasil
+            // Login berhasil, simpan data ke session
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_role'] = $user['role'];
 
-            // Arahkan ke dashboard
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+            // Kirim respons JSON sukses
+            $payload = json_encode(['status' => 'success', 'message' => 'Login successful!']);
+            $response->getBody()->write($payload);
+            return $response->withHeader('Content-Type', 'application/json');
         }
 
-        // Jika gagal, kembali ke halaman login (nanti kita tambahkan SweetAlert)
-        return $response->withHeader('Location', '/login?error=1')->withStatus(302);
+        // Login gagal, kirim respons JSON error
+        $payload = json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+        $response->getBody()->write($payload);
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(401); // 401 Unauthorized
     }
 
     public function showRegisterForm(Request $request, Response $response): Response
