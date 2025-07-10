@@ -21,7 +21,7 @@ class AuthController
 
     public function showLoginForm(Request $request, Response $response): Response
     {
-        $body = $this->view->render('auth-login.html');
+        $body = $this->view->render('auth-login.twig');
         $response->getBody()->write($body);
         return $response;
     }
@@ -51,5 +51,38 @@ class AuthController
 
         // Jika gagal, kembali ke halaman login (nanti kita tambahkan SweetAlert)
         return $response->withHeader('Location', '/login?error=1')->withStatus(302);
+    }
+
+    public function showRegisterForm(Request $request, Response $response): Response
+    {
+        $body = $this->view->render('auth-register.twig');
+        $response->getBody()->write($body);
+        return $response;
+    }
+
+    public function register(Request $request, Response $response): Response
+    {
+        $data = $request->getParsedBody();
+
+        // Validasi sederhana (nanti bisa dibuat lebih canggih)
+        if ($data['password'] !== $data['password_confirm']) {
+            // Password tidak cocok, kembali ke form register
+            // Nanti kita tambahkan notifikasi error
+            return $response->withHeader('Location', '/register?error=password')->withStatus(302);
+        }
+
+        // Hash password untuk keamanan! Ini WAJIB.
+        $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+
+        // Simpan ke database
+        $this->db->insert('tbl_users', [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $hashedPassword,
+            'role' => 'Pengguna Umum' // Default role
+        ]);
+
+        // Redirect ke halaman login dengan notifikasi sukses
+        return $response->withHeader('Location', '/login?success=1')->withStatus(302);
     }
 }

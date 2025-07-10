@@ -14,6 +14,7 @@ use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 use App\Application\Controllers\AuthController;
+use App\Application\Controllers\DashboardController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -34,7 +35,7 @@ return function (ContainerBuilder $containerBuilder) {
         'db' => function () {
             return new Medoo([
                 'database_type' => 'mysql',
-                'database_name' => 'kms_db',
+                'database_name' => 'db_kms',
                 'server' => 'localhost',
                 'username' => 'root',
                 'password' => ''
@@ -54,6 +55,11 @@ return function (ContainerBuilder $containerBuilder) {
 
             // Buat AuthController dengan DUA dependency
             return new AuthController($view, $db);
+        },
+        DashboardController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            $db = $c->get('db');
+            return new DashboardController($view, $db);
         },
     ]);
 };

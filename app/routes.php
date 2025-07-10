@@ -10,6 +10,8 @@ use Slim\App;
 use Slim\Interfaces\RouteCollectorProxyInterface as Group;
 
 use App\Application\Controllers\AuthController;
+use App\Application\Controllers\DashboardController;
+
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -29,4 +31,16 @@ return function (App $app) {
 
     $app->get('/login', AuthController::class . ':showLoginForm');
     $app->post('/login', AuthController::class . ':login');
+
+    $app->get('/register', AuthController::class . ':showRegisterForm');
+    $app->post('/register', AuthController::class . ':register');
+
+    // Route untuk Dashboard
+    $app->get('/dashboard', DashboardController::class . ':showDashboard');
+
+    // Route untuk Logout
+    $app->get('/logout', function ($request, $response) {
+        session_destroy();
+        return $response->withHeader('Location', '/login')->withStatus(302);
+    });
 };

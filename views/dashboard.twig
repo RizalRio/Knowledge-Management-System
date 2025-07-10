@@ -1,0 +1,46 @@
+{% extends "layout-main.twig" %}
+
+{% block content %}
+
+{# Tampilkan ini jika yang login adalah Admin #}
+{% if session.user_role == 'Admin' %}
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>150</h3>
+                <p>Materi Baru</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>53<sup style="font-size: 20px">%</sup></h3>
+                <p>Feedback Rate</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+
+{# Tampilkan ini jika yang login BUKAN Admin #}
+{% else %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Materi Untuk Anda</h3>
+    </div>
+    <div class="card-body">
+        Selamat datang di Knowledge Management System! Materi yang ditugaskan untuk Anda akan muncul di sini.
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
