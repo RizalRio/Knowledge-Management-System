@@ -52,6 +52,12 @@ return function (App $app) {
     $app->get('/view-material/{id}', MaterialController::class . ':viewMaterial');
     $app->get('/api/materials', MaterialController::class . ':data');
 
+    // Route untuk Feedbacks
+    $app->get('/feedbacks', FeedbackController::class . ':index');
+    $app->get('/api/feedbacks', FeedbackController::class . ':data');
+    $app->get('/feedbacks/assess/{id}', FeedbackController::class . ':showAssessForm');
+    $app->post('/feedbacks/assess/save/{id}', FeedbackController::class . ':storeAssessment');
+    $app->post('/feedbacks/delete', FeedbackController::class . ':delete');
     $app->post('/feedback/store/{id}', FeedbackController::class . ':store');
 
     // Route untuk Logout

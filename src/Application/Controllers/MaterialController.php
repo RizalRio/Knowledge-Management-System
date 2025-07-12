@@ -28,7 +28,8 @@ class MaterialController
         }
 
         $body = $this->view->render('material/material-index.twig', [
-            'session' => $_SESSION
+            'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -72,7 +73,8 @@ class MaterialController
         }
 
         $body = $this->view->render('material/material-create.twig', [
-            'session' => $_SESSION
+            'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -172,7 +174,8 @@ class MaterialController
 
         $body = $this->view->render('material/material-edit.twig', [
             'session' => $_SESSION,
-            'material' => $material
+            'material' => $material,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -247,7 +250,8 @@ class MaterialController
         $body = $this->view->render('material/material-assign.twig', [
             'session' => $_SESSION,
             'material' => $material,
-            'users' => $users
+            'users' => $users,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -286,39 +290,58 @@ class MaterialController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    // Method untuk Karyawan melihat materi
-    public function viewMaterial(Request $request, Response $response, array $args): Response
+    // Method untuk Tim dapat melihat materi dan mengirim feedback
+    public function viewMaterial(Request $request, Response $response, $args): Response
     {
+        // 1. Cek apakah pengguna sudah login
         if (!isset($_SESSION['user_id'])) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
+        // 2. Ambil ID dari URL dan session
         $materialId = $args['id'];
         $userId = $_SESSION['user_id'];
 
-        // PENTING: Cek keamanan, pastikan user ini memang ditugaskan materi ini
+        // 3. Lakukan Pengecekan Keamanan: Pastikan pengguna berhak mengakses materi ini
         $isAssigned = $this->db->has('tbl_material_assignments', [
             'AND' => [
                 'material_id' => $materialId,
-                'user_id' => $userId
+                'user_id' => $userId,
+                'archived' => 0
             ]
         ]);
 
-        // Jika user adalah Admin, izinkan akses (untuk preview)
+        // Jika pengguna adalah Admin, berikan akses penuh untuk tujuan preview
         if ($_SESSION['user_role'] === 'Admin') {
             $isAssigned = true;
         }
 
+        // Jika tidak ditugaskan dan bukan Admin, lempar keluar
         if (!$isAssigned) {
-            // Jika tidak berhak, lempar ke dashboard
             return $response->withHeader('Location', '/dashboard')->withStatus(302);
         }
 
-        $material = $this->db->get('tbl_materials', '*', ['id' => $materialId]);
+        // 4. Ambil data materi setelah pengecekan keamanan berhasil
+        $material = $this->db->get("tbl_materials", "*", ["id" => $materialId, "archived" => 0]);
 
+        // Jika materi tidak ada (misalnya sudah dihapus), tampilkan halaman tidak ditemukan
+        if (!$material) {
+            return $response->withStatus(404);
+        }
+
+        // 5. Ambil data feedback yang sudah ada untuk materi dan pengguna ini
+        $existingFeedback = $this->db->get("tbl_feedbacks", "*", [
+            "material_id" => $materialId,
+            "user_id" => $userId,
+            "archived" => 0
+        ]);
+
+        // 6. Tampilkan halaman dengan semua data yang diperlukan
         $body = $this->view->render('material/material-view.twig', [
             'session' => $_SESSION,
-            'material' => $material
+            'material' => $material,
+            'feedback' => $existingFeedback,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;

@@ -1,0 +1,135 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Kelola Feedback{% endblock %}
+{% block page_title %}Daftar Feedback Pengguna{% endblock %}
+
+{# Tambahkan CSS khusus untuk DataTables di <head> #}
+{% block head_styles %}
+  <link rel="stylesheet" href="/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+  <link rel="stylesheet" href="/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Semua Feedback yang Masuk</h3>
+  </div>
+  <div class="card-body">
+    <table id="feedbacks-table" class="table table-bordered table-striped">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Judul Materi</th>
+        <th>Dari Pengguna</th>
+        <th>Isi Feedback</th>
+        <th>Tanggal Kirim</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+      </thead>
+      <tbody>
+        {# Isi tabel akan dimuat oleh AJAX #}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+
+<script>
+// Skrip Inisialisasi DataTables (sudah ada)
+$(function () {
+  $('#feedbacks-table').DataTable({
+    "processing": true,
+    "serverSide": false, // Bisa diubah ke true jika data sangat banyak
+    "ajax": {
+        "url": "/api/feedbacks",
+        "type": "GET"
+    },
+    "columns": [
+        { "data": "id" },
+        { "data": "material_title" },
+        { "data": "user_name" },
+        { 
+            "data": "feedback_text",
+            "render": function(data, type, row) {
+                // Potong teks jika terlalu panjang
+                return data && data.length > 50 ? data.substr(0, 50) + '...' : data;
+            }
+        },
+        { 
+            "data": "create_time",
+            "render": function(data, type, row) {
+                return new Date(data).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+        },
+        {
+            "data": "assessment_score",
+            "render": function(data, type, row) {
+                if (data !== null) {
+                    return '<span class="badge badge-success">Sudah Dinilai</span>';
+                } else {
+                    return '<span class="badge badge-warning">Belum Dinilai</span>';
+                }
+            }
+        },
+        {
+            "data": "id",
+            "render": function(data, type, row) {
+                // Tombol aksi untuk admin
+                return `<a href="/feedbacks/assess/${data}" class="btn btn-primary btn-xs" title="Lihat & Nilai"><i class="fas fa-check-double"></i> Nilai</a>
+                        <button class="btn btn-danger btn-xs btn-delete" data-id="${data}" title="Hapus"><i class="fas fa-trash"></i> Hapus</button>`;
+            },
+            "orderable": false
+        }
+    ],
+    "responsive": true, 
+    "lengthChange": false, 
+    "autoWidth": false,
+    "order": [[ 0, "desc" ]] // Urutkan berdasarkan ID terbaru
+  });
+});
+
+// TAMBAHKAN SKRIP INI UNTUK FUNGSI HAPUS
+$('#feedbacks-table').on('click', '.btn-delete', function() {
+    const feedbackId = $(this).data('id');
+
+    Swal.fire({
+        title: 'Anda Yakin?',
+        text: "Feedback yang dihapus akan diarsipkan dan tidak bisa dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Kirim request AJAX untuk hapus
+            $.ajax({
+                url: '/feedbacks/delete', // Route yang sudah dibuat sebelumnya
+                method: 'POST',
+                data: { id: feedbackId },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire('Berhasil!', response.message, 'success');
+                        // Muat ulang data tabel tanpa refresh halaman
+                        $('#feedbacks-table').DataTable().ajax.reload();
+                    } else {
+                        Swal.fire('Gagal!', response.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error!', 'Terjadi kesalahan saat menghubungi server.', 'error');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

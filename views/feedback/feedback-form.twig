@@ -1,0 +1,174 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Nilai Feedback{% endblock %}
+{% block page_title %}Form Penilaian Feedback{% endblock %}
+
+{# Tambahkan CSS untuk styling bintang interaktif #}
+{% block head_styles %}
+<style>
+    .display-star-rating {
+        font-size: 1.2rem;
+        color: #ffc107;
+        margin-bottom: 10px;
+    }
+    .display-star-rating .inactive {
+        color: #d3d3d3;
+    }
+    .score {
+        margin-bottom: 0;
+    }
+    .star-rating {
+        font-size: 2rem; /* Ukuran bintang */
+        color: #d3d3d3;  /* Warna bintang mati */
+        cursor: pointer;
+    }
+    .star-rating .fa-star:hover,
+    .star-rating .fa-star.hover,
+    .star-rating .fa-star.selected {
+        color: #ffc107; /* Warna bintang saat hover atau dipilih */
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-7">
+        {# Kartu Detail Feedback (Tidak ada perubahan) #}
+        <div class="card card-primary">
+            <div class="card-header"><h3 class="card-title">Detail Feedback</h3></div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Dikirim oleh</dt>
+                    <dd class="col-sm-8">{{ feedback.user_name }}</dd>
+                    <dt class="col-sm-4">Isi Feedback</dt>
+                    <dd class="col-sm-8">{{ feedback.feedback_text }}</dd>
+                    <dt class="col-sm-4">Rating Materi</dt>
+                    <dd class="col-sm-8 display-star-rating">
+                        {% for i in 1..5 %}
+                            <i class="fas fa-star {% if i > feedback.material_rating %}inactive{% endif %}"></i>
+                        {% endfor %}
+                    </dd>
+                    <dt class="col-sm-4">Materi Terkait</dt>
+                    <dd class="col-sm-8">{{ feedback.material_title }}</dd>
+                    <div class="card-body">
+                        {# Tampilkan konten berdasarkan tipe #}
+                        {% if feedback.material_type == 'PDF' %}
+                            <embed src="{{ feedback.material_content }}" type="application/pdf" width="100%" height="600px" />
+                        {% elseif feedback.material_type == 'Image' %}
+                            <img src="{{ feedback.material_content }}" class="img-fluid" alt="{{ feedback.material_title }}">
+                        {% elseif feedback.material_type == 'Link' %}
+                            <p>Materi ini adalah sebuah link eksternal. Silakan klik tombol di bawah untuk membukanya di tab baru.</p>
+                            <a href="{{ feedback.material_content }}" class="btn btn-lg btn-success" target="_blank">Buka Link</a>
+                        {% endif %}
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card card-info">
+            <div class="card-header"><h3 class="card-title">Form Penilaian</h3></div>
+            {# Form Penilaian #}
+            <form id="assessment-form" data-id="{{ feedback.id }}">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Skor Penilaian <span class="text-danger">*</span></label>
+                        <div class="star-rating">
+                            <i class="fas fa-star" data-value="1"></i>
+                            <i class="fas fa-star" data-value="2"></i>
+                            <i class="fas fa-star" data-value="3"></i>
+                            <i class="fas fa-star" data-value="4"></i>
+                            <i class="fas fa-star" data-value="5"></i>
+                        </div>
+                        <input type="hidden" id="assessment_score" name="assessment_score" value="{{ feedback.assessment_score ?: 0 }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="assessment_notes">Catatan Tambahan</label>
+                        <textarea class="form-control" id="assessment_notes" name="assessment_notes" rows="4" placeholder="Berikan catatan atau apresiasi untuk pengguna">{{ feedback.assessment_notes }}</textarea>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Simpan Penilaian</button>
+                    <a href="/feedbacks" class="btn btn-secondary">Batal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{# Skrip untuk fungsionalitas bintang #}
+<script>
+$(document).ready(function() {
+    const stars = $('.star-rating .fa-star');
+    const scoreInput = $('#assessment_score');
+    function setInitialRating(score) {
+        if (score > 0) {
+            stars.each(function() {
+                if ($(this).data('value') <= score) { $(this).addClass('selected'); }
+            });
+        }
+    }
+    setInitialRating(scoreInput.val());
+    stars.on('mouseover', function() {
+        const val = $(this).data('value');
+        stars.each(function(){ $(this).toggleClass('hover', $(this).data('value') <= val); });
+    }).on('mouseout', function() {
+        stars.removeClass('hover');
+    }).on('click', function() {
+        const val = $(this).data('value');
+        scoreInput.val(val);
+        stars.removeClass('selected');
+        stars.each(function(){ $(this).toggleClass('selected', $(this).data('value') <= val); });
+    });
+});
+</script>
+
+{#  TAMBAHKAN SKRIP INI UNTUK PENGIRIMAN AJAX #}
+<script>
+$('#assessment-form').on('submit', function(e) {
+    // 1. Mencegah form dari submit standar (refresh halaman)
+    e.preventDefault();
+
+    const id = $(this).data('id');
+    const formData = {
+        assessment_score: $('#assessment_score').val(),
+        assessment_notes: $('#assessment_notes').val()
+    };
+    
+    // Validasi sederhana di sisi klien
+    if (formData.assessment_score < 1) {
+        Swal.fire('Gagal', 'Anda harus memilih minimal 1 bintang.', 'error');
+        return;
+    }
+
+    // 2. Kirim data menggunakan AJAX
+    $.ajax({
+        url: `/feedbacks/assess/save/${id}`,
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            // 3. Tampilkan notifikasi sukses jika berhasil
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil',
+                text: 'Penilaian berhasil disimpan.',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                // 4. Arahkan kembali ke halaman daftar feedback
+                window.location.href = '/feedbacks'; 
+            });
+        },
+        error: function(xhr) {
+            // Tampilkan notifikasi error jika gagal
+            Swal.fire('Gagal', 'Terjadi kesalahan saat menyimpan penilaian. Pastikan semua field terisi.', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -24,7 +24,11 @@ class DashboardController
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
+        // Ambil path saat ini dari request
+        $currentPath = $request->getUri()->getPath();
+
         $data['session'] = $_SESSION;
+        $data['current_path'] = $currentPath;
 
         // Jika yang login BUKAN Admin, ambil materi yang ditugaskan
         if ($_SESSION['user_role'] !== 'Admin') {

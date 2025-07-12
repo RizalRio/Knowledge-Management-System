@@ -3,6 +3,33 @@
 {% block title %}{{ material.title }}{% endblock %}
 {% block page_title %}Materi: {{ material.title }}{% endblock %}
 
+{# CSS untuk styling bintang #}
+{% block head_styles %}
+<style>
+    .display-star-rating {
+        font-size: 1.2rem;
+        color: #ffc107;
+        margin-bottom: 10px;
+    }
+    .display-star-rating .inactive {
+        color: #d3d3d3;
+    }
+    .score {
+        margin-bottom: 0;
+    }
+    .star-rating {
+        font-size: 2rem; /* Ukuran bintang */
+        color: #d3d3d3;  /* Warna bintang mati */
+        cursor: pointer;
+    }
+    .star-rating .fa-star:hover,
+    .star-rating .fa-star.hover,
+    .star-rating .fa-star.selected {
+        color: #ffc107; /* Warna bintang saat hover atau dipilih */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-8">
@@ -34,30 +61,95 @@
         </div>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Beri Feedback</h3>
+                <h3 class="card-title">Feedback</h3>
             </div>
-            <form id="feedback-form" method="post">
-                <div class="card-body">
-                    <div class="form-group">
-                        <label for="feedback_text">Tulis tanggapan atau pertanyaan Anda di sini:</label>
-                        <textarea class="form-control" id="feedback_text" name="feedback_text" rows="4" placeholder="Contoh: Materi ini sangat membantu, namun saya ada pertanyaan terkait poin B..." required></textarea>
+            <div class="card-body" id="feedback-card-body">
+                {% if feedback %}
+                    <div class="alert alert-success">
+                        Anda telah mengirimkan feedback pada {{ feedback.create_time|date("d M Y H:i") }}.
                     </div>
-                </div>
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-success">Kirim Feedback</button>
-                </div>
-            </form>
+                    <p class="score"><strong>Rating Anda:</strong></p>
+                    <div class="display-star-rating">
+                        {% for i in 1..5 %}<i class="fas fa-star {% if i > feedback.material_rating %}inactive{% endif %}"></i>{% endfor %}
+                    </div>
+                    <p><strong>Tanggapan Anda:</strong></p>
+                    <p>{{ feedback.feedback_text }}</p>
+
+                    {% if feedback.assessment_score %}
+                        <hr>
+                        <h4>Penilaian HR</h4>
+                        <p class="score"><strong>Skor:</strong></p>
+                        <div class="display-star-rating">
+                            {% for i in 1..5 %}
+                                <i class="fas fa-star {% if i > feedback.assessment_score %}inactive{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <p><strong>Catatan:</strong> {{ feedback.assessment_notes }}</p>
+                    {% endif %}
+                {% else %}
+
+                    <form id="feedback-form" method="post">
+                        <div class="form-group">
+                            <label>Rating Materi<span class="text-danger">*</span></label>
+                            <div class="star-rating">
+                                <i class="fas fa-star" data-value="1"></i>
+                                <i class="fas fa-star" data-value="2"></i>
+                                <i class="fas fa-star" data-value="3"></i>
+                                <i class="fas fa-star" data-value="4"></i>
+                                <i class="fas fa-star" data-value="5"></i>
+                            </div>
+                            <input type="hidden" id="material_rating" name="material_rating" value="{{ feedback.material_rating ?: 0 }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="feedback_text">Tulis tanggapan Anda di sini:<span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="feedback_text" name="feedback_text" rows="4" placeholder="Contoh: Materi ini sangat membantu, namun saya ada pertanyaan terkait poin B..." required></textarea>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success">Kirim Feedback</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{# Skrip untuk fungsionalitas bintang (Tidak ada perubahan) #}
+<script>
+$(document).ready(function() {
+    const stars = $('.star-rating .fa-star');
+    const scoreInput = $('#material_rating');
+    function setInitialRating(score) {
+        if (score > 0) {
+            stars.each(function() {
+                if ($(this).data('value') <= score) { $(this).addClass('selected'); }
+            });
+        }
+    }
+    setInitialRating(scoreInput.val());
+    stars.on('mouseover', function() {
+        const val = $(this).data('value');
+        stars.each(function(){ $(this).toggleClass('hover', $(this).data('value') <= val); });
+    }).on('mouseout', function() {
+        stars.removeClass('hover');
+    }).on('click', function() {
+        const val = $(this).data('value');
+        scoreInput.val(val);
+        stars.removeClass('selected');
+        stars.each(function(){ $(this).toggleClass('selected', $(this).data('value') <= val); });
+    });
+});
+</script>
 <script>
 $(document).ready(function() {
     $('#feedback-form').on('submit', function(e) {
         e.preventDefault();
         var form = $(this);
+        const materialId = form.data('id'); // Ambil ID materi dari atribut data-id
+        const feedbackText = $('#feedback_text').val(); // Ambil teks dari textarea
         var formData = form.serialize();
 
         Swal.fire({
@@ -73,15 +165,32 @@ $(document).ready(function() {
             data: formData,
             dataType: 'json',
             success: function(response) {
+                if (response.status === 'success') {
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
                     text: response.message,
                 }).then(() => {
-                    // Kosongkan textarea dan disable tombol setelah berhasil
-                    $('#feedback_text').val('');
-                    form.find('button[type="submit"]').prop('disabled', true).text('Feedback Terkirim');
-                });
+                    // 3. Siapkan HTML baru untuk menggantikan form
+                        const now = new Date();
+                        // Format tanggal dan waktu saat ini
+                        const formattedDateTime = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                        
+                        // Buat blok HTML baru
+                        const newFeedbackHtml = `
+                            <div class="alert alert-success">
+                                Anda telah mengirimkan feedback pada ${formattedDateTime}.
+                            </div>
+                            <p><strong>Feedback Anda:</strong></p>
+                            <p>${feedbackText.replace(/\n/g, '<br>')}</p>
+                        `;
+
+                        // 4. Ganti isi card-body dengan HTML yang baru
+                        $('#feedback-card-body').html(newFeedbackHtml);
+                    });
+                } else {
+                     Swal.fire({ icon: 'error', title: 'Gagal', text: response.message });
+                }
             },
             error: function(xhr) {
                 var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
