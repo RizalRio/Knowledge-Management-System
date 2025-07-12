@@ -12,6 +12,7 @@ use Slim\Interfaces\RouteCollectorProxyInterface as Group;
 use App\Application\Controllers\AuthController;
 use App\Application\Controllers\DashboardController;
 use App\Application\Controllers\MaterialController;
+use App\Application\Controllers\FeedbackController;
 
 
 return function (App $app) {
@@ -39,8 +40,19 @@ return function (App $app) {
     // Route untuk Dashboard
     $app->get('/dashboard', DashboardController::class . ':showDashboard');
 
+    // Route untuk Materi (khusus Admin)
     $app->get('/materials', MaterialController::class . ':index');
+    $app->get('/materials/create', MaterialController::class . ':create'); // <-- TAMBAHKAN INI
+    $app->post('/materials', MaterialController::class . ':store');     // <-- TAMBAHKAN INI
+    $app->post('/materials/delete/{id}', MaterialController::class . ':delete');
+    $app->get('/materials/edit/{id}', MaterialController::class . ':edit'); // <-- TAMBAHKAN INI
+    $app->post('/materials/update/{id}', MaterialController::class . ':update'); // <-- TAMBAHKAN INI
+    $app->get('/materials/assign/{id}', MaterialController::class . ':showAssignForm'); // <-- TAMBAHKAN INI
+    $app->post('/materials/assign/{id}', MaterialController::class . ':storeAssignment'); // <-- TAMBAHKAN INI
+    $app->get('/view-material/{id}', MaterialController::class . ':viewMaterial');
     $app->get('/api/materials', MaterialController::class . ':data');
+
+    $app->post('/feedback/store/{id}', FeedbackController::class . ':store');
 
     // Route untuk Logout
     $app->get('/logout', function ($request, $response) {

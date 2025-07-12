@@ -20,13 +20,29 @@ class DashboardController
 
     public function showDashboard(Request $request, Response $response): Response
     {
-        // Cek apakah user sudah login atau belum
         if (!isset($_SESSION['user_id'])) {
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
-        // Kirim data session ke view agar bisa diakses di template
         $data['session'] = $_SESSION;
+
+        // Jika yang login BUKAN Admin, ambil materi yang ditugaskan
+        if ($_SESSION['user_role'] !== 'Admin') {
+            $userId = $_SESSION['user_id'];
+
+            // Query dengan JOIN untuk mengambil data materi berdasarkan penugasan
+            $data['assigned_materials'] = $this->db->select('tbl_material_assignments', [
+                '[><]tbl_materials' => ['material_id' => 'id']
+            ], [
+                'tbl_materials.id',
+                'tbl_materials.title',
+                'tbl_materials.description',
+                'tbl_materials.type'
+            ], [
+                'tbl_material_assignments.user_id' => $userId,
+                'tbl_materials.archived' => 0
+            ]);
+        }
 
         $body = $this->view->render('dashboard.twig', $data);
         $response->getBody()->write($body);

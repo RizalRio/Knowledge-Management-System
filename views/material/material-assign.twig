@@ -1,0 +1,68 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Tugaskan Materi{% endblock %}
+{% block page_title %}Tugaskan Materi: {{ material.title }}{% endblock %}
+
+{% block content %}
+<div class="card card-info">
+    <div class="card-header">
+        <h3 class="card-title">Pilih Karyawan</h3>
+    </div>
+    <form id="assign-material-form" method="post">
+        <div class="card-body">
+            <p>Pilih satu atau lebih karyawan yang akan menerima materi ini.</p>
+            <div class="form-group">
+                {% for user in users %}
+                    <div class="custom-control custom-checkbox">
+                        <input class="custom-control-input" type="checkbox" id="user_{{ user.id }}" name="user_ids[]" value="{{ user.id }}" {{ user.is_assigned ? 'checked' : '' }}>
+                        <label for="user_{{ user.id }}" class="custom-control-label">{{ user.name }} ({{ user.email }})</label>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Belum ada karyawan dengan role "Pengguna Umum".</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-info">Simpan Penugasan</button>
+            <a href="/materials" class="btn btn-secondary">Kembali</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#assign-material-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize(); // Kita pakai serialize biasa karena tidak ada file
+
+        Swal.fire({
+            title: 'Menyimpan...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.ajax({
+            url: '/materials/assign/{{ material.id }}', // Endpoint kita
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: response.message,
+                }).then(() => {
+                    window.location.href = '/materials';
+                });
+            },
+            error: function(xhr) {
+                var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+                Swal.fire({ icon: 'error', title: 'Oops...', text: errorMsg });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

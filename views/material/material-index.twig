@@ -86,8 +86,45 @@ $(function () {
 });
 
 function deleteMaterial(id) {
-    // Nanti kita isi fungsi hapus dengan AJAX + SweetAlert
-    Swal.fire('Fitur Hapus', `Anda mencoba menghapus materi dengan ID: ${id}`, 'info');
+    Swal.fire({
+        title: 'Anda Yakin?',
+        text: "Materi yang dihapus tidak akan bisa dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus Saja!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        // Blok ini hanya akan berjalan jika user mengklik tombol "Ya, Hapus Saja!"
+        if (result.isConfirmed) {
+            // Kirim request hapus ke server via AJAX
+            $.ajax({
+                url: `/materials/delete/${id}`, // Pastikan route ini sudah POST
+                type: 'POST',                  // Pastikan method ini POST
+                dataType: 'json',
+                success: function(response) {
+                    if(response.status === 'success') {
+                        Swal.fire(
+                            'Dihapus!',
+                            response.message,
+                            'success'
+                        );
+                        // Muat ulang data di tabel agar yang dihapus hilang
+                        $('#materials-table').DataTable().ajax.reload();
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal menghapus data.';
+                    Swal.fire(
+                        'Gagal!',
+                        errorMsg,
+                        'error'
+                    );
+                }
+            });
+        }
+    });
 }
 </script>
 {% endblock %}

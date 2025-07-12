@@ -16,6 +16,7 @@ use Twig\Loader\FilesystemLoader;
 use App\Application\Controllers\AuthController;
 use App\Application\Controllers\DashboardController;
 use App\Application\Controllers\MaterialController;
+use App\Application\Controllers\FeedbackController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -66,6 +67,14 @@ return function (ContainerBuilder $containerBuilder) {
             $view = $c->get('view');
             $db = $c->get('db');
             return new MaterialController($view, $db);
+        },
+        FeedbackController::class => function (ContainerInterface $c) {
+            // Ambil 'view' dan 'db' yang sudah terdaftar
+            $view = $c->get('view');
+            $db = $c->get('db');
+
+            // Buat FeedbackController dengan dependency yang benar
+            return new FeedbackController($view, $db);
         },
     ]);
 };

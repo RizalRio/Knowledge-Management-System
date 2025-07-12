@@ -1,0 +1,116 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Edit Materi{% endblock %}
+{% block page_title %}Edit Materi: {{ material.title }}{% endblock %}
+
+{% block content %}
+<div class="card card-warning">
+    <div class="card-header">
+        <h3 class="card-title">Formulir Edit Materi</h3>
+    </div>
+    <form id="edit-material-form" method="post" enctype="multipart/form-data">
+        <div class="card-body">
+            <div class="form-group">
+                <label for="title">Judul Materi</label>
+                <input type="text" class="form-control" id="title" name="title" value="{{ material.title }}" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Deskripsi</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ material.description }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="type">Tipe Materi</label>
+                <select class="form-control" id="type" name="type" required>
+                    <option value="PDF" {{ material.type == 'PDF' ? 'selected' : '' }}>PDF</option>
+                    <option value="Image" {{ material.type == 'Image' ? 'selected' : '' }}>Gambar</option>
+                    <option value="Link" {{ material.type == 'Link' ? 'selected' : '' }}>Link Eksternal</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Konten Saat Ini</label>
+                <p class="form-control-static">{{ material.content }}</p>
+                <small class="form-text text-muted">Jika Anda mengupload file baru, file lama akan digantikan. Jika tidak, biarkan kosong.</small>
+            </div>
+            <div class="form-group" id="content-upload">
+                <label for="content_file">Upload File Baru (Opsional)</label>
+                <div class="input-group">
+                    <div class="custom-file">
+                        <input type="file" class="custom-file-input" id="content_file" name="content_file">
+                        <label class="custom-file-label" for="content_file">Pilih file</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" id="content-link" style="display: none;">
+                <label for="content_url">URL Materi</label>
+                <input type="text" class="form-control" id="content_url" name="content_url" value="{{ material.content }}">
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning">Update</button>
+            <a href="/materials" class="btn btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Logika untuk menampilkan input yang sesuai (sama seperti create)
+    function toggleContentInput(type) {
+        if (type === 'Link') {
+            $('#content-upload').hide();
+            $('#content-link').show();
+            $('#content_url').prop('required', true);
+            $('#content_file').prop('required', false);
+        } else {
+            $('#content-upload').show();
+            $('#content-link').hide();
+            $('#content_url').prop('required', false);
+        }
+    }
+
+    $('#type').on('change', function() {
+        toggleContentInput(this.value);
+    });
+    toggleContentInput($('#type').val());
+
+    bsCustomFileInput.init();
+
+    // Proses form submit dengan AJAX
+    $('#edit-material-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+
+        Swal.fire({
+            title: 'Updating...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        $.ajax({
+            url: '/materials/update/{{ material.id }}', // Endpoint UPDATE kita
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: response.message,
+                }).then(() => {
+                    window.location.href = '/materials';
+                });
+            },
+            error: function(xhr) {
+                var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+                Swal.fire({ icon: 'error', title: 'Oops...', text: errorMsg });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

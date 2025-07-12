@@ -33,14 +33,31 @@
 
 {# Tampilkan ini jika yang login BUKAN Admin #}
 {% else %}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Materi Untuk Anda</h3>
+    {# Tampilkan ini jika yang login BUKAN Admin #}
+    <div class="row">
+        {% for material in assigned_materials %}
+            <div class="col-md-4">
+                <div class="card card-outline card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">{{ material.title }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ material.description|slice(0, 100) ~ '...' }}</p>
+                        <a href="/view-material/{{ material.id }}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Lihat Materi
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="callout callout-info">
+                    <h5>Belum Ada Materi</h5>
+                    <p>Saat ini belum ada materi baru yang ditugaskan untuk Anda. Silakan cek kembali nanti.</p>
+                </div>
+            </div>
+        {% endfor %}
     </div>
-    <div class="card-body">
-        Selamat datang di Knowledge Management System! Materi yang ditugaskan untuk Anda akan muncul di sini.
-    </div>
-</div>
 {% endif %}
 
 {% endblock %}
