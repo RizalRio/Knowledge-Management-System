@@ -13,7 +13,7 @@ use App\Application\Controllers\AuthController;
 use App\Application\Controllers\DashboardController;
 use App\Application\Controllers\MaterialController;
 use App\Application\Controllers\FeedbackController;
-
+use App\Application\Controllers\UserController;
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -27,8 +27,13 @@ return function (App $app) {
     });
 
     $app->group('/users', function (Group $group) {
-        $group->get('', ListUsersAction::class);
-        $group->get('/{id}', ViewUserAction::class);
+        $group->get('', UserController::class . ':index');
+        $group->get('/api', UserController::class . ':data');
+        $group->get('/create', UserController::class . ':create');
+        $group->post('', UserController::class . ':store');
+        $group->get('/edit/{id}', UserController::class . ':edit');
+        $group->post('/update/{id}', UserController::class . ':update');
+        $group->post('/delete', UserController::class . ':delete');
     });
 
     $app->get('/login', AuthController::class . ':showLoginForm');

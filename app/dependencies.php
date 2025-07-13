@@ -17,6 +17,7 @@ use App\Application\Controllers\AuthController;
 use App\Application\Controllers\DashboardController;
 use App\Application\Controllers\MaterialController;
 use App\Application\Controllers\FeedbackController;
+use App\Application\Controllers\UserController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -75,6 +76,14 @@ return function (ContainerBuilder $containerBuilder) {
 
             // Buat FeedbackController dengan dependency yang benar
             return new FeedbackController($view, $db);
+        },
+        UserController::class => function (ContainerInterface $c) {
+            // Ambil 'view' dan 'db' dari container
+            $view = $c->get('view');
+            $db = $c->get('db');
+
+            // Buat UserController dengan DUA dependency
+            return new UserController($view, $db);
         },
     ]);
 };
