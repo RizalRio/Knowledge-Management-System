@@ -33,7 +33,7 @@ return function (App $app) {
         $group->post('', UserController::class . ':store');
         $group->get('/edit/{id}', UserController::class . ':edit');
         $group->post('/update/{id}', UserController::class . ':update');
-        $group->post('/delete', UserController::class . ':delete');
+        $group->post('/delete/{id}', UserController::class . ':delete');
     });
 
     $app->get('/login', AuthController::class . ':showLoginForm');

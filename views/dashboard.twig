@@ -2,62 +2,81 @@
 
 {% block content %}
 
-{# Tampilkan ini jika yang login adalah Admin #}
-{% if session.user_role == 'Admin' %}
-<div class="row">
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>150</h3>
-                <p>Materi Baru</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>53<sup style="font-size: 20px">%</sup></h3>
-                <p>Feedback Rate</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-comments"></i>
-            </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-</div>
+	{# Tampilkan ini jika yang login adalah Admin #}
+	{% if session.user_role == 'Admin' %}
+		<div class="row">
+			<div class="col-lg-3 col-6">
+				<div class="small-box bg-info">
+					<div class="inner">
+						<h3>150</h3>
+						<p>Materi Baru</p>
+					</div>
+					<div class="icon">
+						<i class="fas fa-file-alt"></i>
+					</div>
+					<a href="#" class="small-box-footer">More info
+						<i class="fas fa-arrow-circle-right"></i>
+					</a>
+				</div>
+			</div>
+			<div class="col-lg-3 col-6">
+				<div class="small-box bg-success">
+					<div class="inner">
+						<h3>53<sup style="font-size: 20px">%</sup>
+						</h3>
+						<p>Feedback Rate</p>
+					</div>
+					<div class="icon">
+						<i class="fas fa-comments"></i>
+					</div>
+					<a href="#" class="small-box-footer">More info
+						<i class="fas fa-arrow-circle-right"></i>
+					</a>
+				</div>
+			</div>
+			<div class="col-lg-3 col-6">
+				<div class="small-box bg-warning">
+					<div class="inner">
+						<h3>44</h3>
+						<p>Pengguna Terdaftar</p>
+					</div>
+					<div class="icon">
+						<i class="fas fa-users"></i>
+					</div>
+					<a href="/users" class="small-box-footer">Kelola Pengguna
+						<i class="fas fa-arrow-circle-right"></i>
+					</a>
+				</div>
+			</div>
 
-{# Tampilkan ini jika yang login BUKAN Admin #}
-{% else %}
-    {# Tampilkan ini jika yang login BUKAN Admin #}
-    <div class="row">
-        {% for material in assigned_materials %}
-            <div class="col-md-4">
-                <div class="card card-outline card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ material.title }}</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>{{ material.description|slice(0, 100) ~ '...' }}</p>
-                        <a href="/view-material/{{ material.id }}" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> Lihat Materi
-                        </a>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <div class="col-12">
-                <div class="callout callout-info">
-                    <h5>Belum Ada Materi</h5>
-                    <p>Saat ini belum ada materi baru yang ditugaskan untuk Anda. Silakan cek kembali nanti.</p>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
+			{# Tampilkan ini jika yang login BUKAN Admin #}
+		{% else %}
+			{# Tampilkan ini jika yang login BUKAN Admin #}
+			<div class="row">
+				{% for material in assigned_materials %}
+					<div class="col-md-4">
+						<div class="card card-outline card-primary">
+							<div class="card-header">
+								<h3 class="card-title">{{ material.title }}</h3>
+							</div>
+							<div class="card-body">
+								<p>{{ material.description|slice(0, 100) ~ '...' }}</p>
+								<a href="/view-material/{{ material.id }}" class="btn btn-primary">
+									<i class="fas fa-eye"></i>
+									Lihat Materi
+								</a>
+							</div>
+						</div>
+					</div>
+				{% else %}
+					<div class="col-12">
+						<div class="callout callout-info">
+							<h5>Belum Ada Materi</h5>
+							<p>Saat ini belum ada materi baru yang ditugaskan untuk Anda. Silakan cek kembali nanti.</p>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
 
-{% endblock %}
+	{% endblock %}

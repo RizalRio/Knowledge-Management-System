@@ -1,0 +1,87 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Tambah User Baru
+{% endblock %}
+{% block page_title %}Tambah User Baru
+{% endblock %}
+
+{% block content %}
+	<div class="card card-primary">
+		<div class="card-header">
+			<h3 class="card-title">Formulir Tambah User</h3>
+		</div>
+		<form id="create-user-form" method="post">
+			<div class="card-body">
+				<div class="form-group">
+					<label for="name">Nama Pengguna</label>
+					<input type="text" class="form-control" id="name" name="name" placeholder="Masukkan nama pengguna" required>
+				</div>
+				<div class="form-group">
+					<label for="email">Email</label>
+					<input type="email" class="form-control" id="email" name="email" placeholder="Masukkan email" required>
+				</div>
+				<div class="form-group">
+					<label for="password">Kata Sandi</label>
+					<input type="password" class="form-control" id="password" name="password" placeholder="Masukkan kata sandi" required>
+				</div>
+				<div class="form-group">
+					<label for="role">Peran</label>
+					<select class="form-control" id="role" name="role" required>
+						<option value="Admin">Admin</option>
+						<option value="Kontributor">Kontributor</option>
+						<option value="Pengguna Umum">Pengguna Umum</option>
+					</select>
+				</div>
+			</div>
+			<div class="card-footer">
+				<button type="submit" class="btn btn-primary">Simpan</button>
+				<a href="/users" class="btn btn-secondary">Batal</a>
+			</div>
+		</form>
+	</div>
+{% endblock %}
+
+{% block scripts %}
+	<script>
+		$(document).ready(function () {
+$('#create-user-form').on('submit', function (e) {
+e.preventDefault();
+
+var formData = $(this).serialize();
+
+Swal.fire({
+title: 'Menyimpan...',
+text: 'Mohon tunggu.',
+allowOutsideClick: false,
+didOpen: () => {
+Swal.showLoading();
+}
+});
+
+$.ajax({
+url: '/users',
+type: 'POST',
+data: formData,
+dataType: 'json',
+success: function (response) {
+if (response.success) {
+Swal.fire({icon: 'success', title: 'Berhasil!', text: response.message}).then(() => {
+window.location.href = '/users';
+});
+} else {
+Swal.fire({
+icon: 'error',
+title: 'Gagal!',
+text: response.message || 'Terjadi kesalahan.'
+});
+}
+},
+error: function (xhr) {
+var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+Swal.fire({icon: 'error', title: 'Oops...', text: errorMsg});
+}
+});
+});
+});
+	</script>
+{% endblock %}
