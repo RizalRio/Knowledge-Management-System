@@ -14,6 +14,7 @@ use App\Application\Controllers\DashboardController;
 use App\Application\Controllers\MaterialController;
 use App\Application\Controllers\FeedbackController;
 use App\Application\Controllers\UserController;
+use App\Application\Controllers\HomeController;
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -21,10 +22,7 @@ return function (App $app) {
         return $response;
     });
 
-    $app->get('/', function (Request $request, Response $response) {
-        $response->getBody()->write('Hello world!');
-        return $response;
-    });
+    $app->get('/', HomeController::class . ':index');
 
     $app->group('/users', function (Group $group) {
         $group->get('', UserController::class . ':index');

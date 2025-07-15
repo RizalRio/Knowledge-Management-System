@@ -18,6 +18,7 @@ use App\Application\Controllers\DashboardController;
 use App\Application\Controllers\MaterialController;
 use App\Application\Controllers\FeedbackController;
 use App\Application\Controllers\UserController;
+use App\Application\Controllers\HomeController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -84,6 +85,10 @@ return function (ContainerBuilder $containerBuilder) {
 
             // Buat UserController dengan DUA dependency
             return new UserController($view, $db);
+        },
+        HomeController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            return new HomeController($view);
         },
     ]);
 };
