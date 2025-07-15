@@ -6,4 +6,4 @@
 !/logs/README.md
 .phpunit.result.cache
 /node_modules/
-/public/uploads/*
+/public/uploads/materials/*
