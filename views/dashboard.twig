@@ -5,51 +5,115 @@
 	{# Tampilkan ini jika yang login adalah Admin #}
 	{% if session.user_role == 'Admin' %}
 		<div class="row">
-			<div class="col-lg-3 col-6">
+			<div class="col-lg-4 col-6">
 				<div class="small-box bg-info">
 					<div class="inner">
-						<h3>150</h3>
-						<p>Materi Baru</p>
+						<h3>{{ stats.total_materials }}</h3>
+						<p>Total Materi</p>
 					</div>
 					<div class="icon">
-						<i class="fas fa-file-alt"></i>
+						<i class="fas fa-book"></i>
 					</div>
-					<a href="#" class="small-box-footer">More info
-						<i class="fas fa-arrow-circle-right"></i>
-					</a>
+					<a href="/materials" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
 				</div>
 			</div>
-			<div class="col-lg-3 col-6">
+			<div class="col-lg-4 col-6">
 				<div class="small-box bg-success">
 					<div class="inner">
-						<h3>53<sup style="font-size: 20px">%</sup>
-						</h3>
-						<p>Feedback Rate</p>
-					</div>
-					<div class="icon">
-						<i class="fas fa-comments"></i>
-					</div>
-					<a href="#" class="small-box-footer">More info
-						<i class="fas fa-arrow-circle-right"></i>
-					</a>
-				</div>
-			</div>
-			<div class="col-lg-3 col-6">
-				<div class="small-box bg-warning">
-					<div class="inner">
-						<h3>44</h3>
-						<p>Pengguna Terdaftar</p>
+						<h3>{{ stats.total_users }}</h3>
+						<p>Total Karyawan</p>
 					</div>
 					<div class="icon">
 						<i class="fas fa-users"></i>
 					</div>
-					<a href="/users" class="small-box-footer">Kelola Pengguna
-						<i class="fas fa-arrow-circle-right"></i>
-					</a>
+					<a href="#" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+				</div>
+			</div>
+			<div class="col-lg-4 col-6">
+				<div class="small-box bg-warning">
+					<div class="inner">
+						<h3>{{ stats.total_feedbacks }}</h3>
+						<p>Total Feedback Masuk</p>
+					</div>
+					<div class="icon">
+						<i class="fas fa-comments"></i>
+					</div>
+					<a href="/feedbacks" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+				</div>
+			</div>
+		</div>
+		<div class="row mt-4">
+			<div class="col-md-6">
+				<div class="card">
+					<div class="card-header border-0">
+						<h3 class="card-title">Materi Terbaru Ditambahkan</h3>
+						<div class="card-tools">
+							<a href="/materials" class="btn btn-tool btn-sm">
+								<i class="fas fa-bars"></i>
+							</a>
+						</div>
+					</div>
+					<div class="card-body table-responsive p-0">
+						<table class="table table-striped table-valign-middle">
+							<thead>
+								<tr>
+									<th>Materi</th>
+									<th>Tipe</th>
+									<th>Aksi</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for material in recent_materials %}
+								<tr>
+									<td>{{ material.title }}</td>
+									<td>
+										{% if material.type == 'PDF' %}
+											<span class="badge bg-danger">PDF</span>
+										{% elseif material.type == 'Image' %}
+											<span class="badge bg-info">Gambar</span>
+										{% else %}
+											<span class="badge bg-success">Link</span>
+										{% endif %}
+									</td>
+									<td>
+										<a href="/materials/edit/{{ material.id }}" class="text-muted">
+											<i class="fas fa-search"></i>
+										</a>
+									</td>
+								</tr>
+								{% else %}
+								<tr><td colspan="3" class="text-center">Belum ada materi.</td></tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 
-			{# Tampilkan ini jika yang login BUKAN Admin #}
+			<div class="col-md-6">
+				<div class="card">
+					<div class="card-header border-0">
+						<h3 class="card-title">Feedback Terbaru dari Karyawan</h3>
+						<div class="card-tools">
+							<a href="/feedbacks" class="btn btn-tool btn-sm">
+								<i class="fas fa-bars"></i>
+							</a>
+						</div>
+					</div>
+					<div class="card-body">
+						{% for feedback in recent_feedbacks %}
+						<div class="d-flex justify-content-between align-items-center border-bottom mb-3 pb-2">
+							<p class="text-sm mb-0">
+								<i class="far fa-user mr-2"></i><strong>{{ feedback.user_name }}</strong> memberi feedback pada <em>"{{ feedback.material_title }}"</em>
+							</p>
+						</div>
+						{% else %}
+						<p class="text-center text-muted">Belum ada feedback.</p>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		</div>
 		{% else %}
 			{# Tampilkan ini jika yang login BUKAN Admin #}
 			<div class="row">

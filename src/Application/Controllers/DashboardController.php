@@ -24,17 +24,41 @@ class DashboardController
             return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
-        // Ambil path saat ini dari request
-        $currentPath = $request->getUri()->getPath();
-
         $data['session'] = $_SESSION;
-        $data['current_path'] = $currentPath;
 
+        // Jika yang login adalah Admin, ambil data statistik
+        if ($_SESSION['user_role'] === 'Admin') {
+            $data['stats'] = [
+                'total_materials' => $this->db->count('tbl_materials', ['archived' => 0]),
+                'total_users' => $this->db->count('tbl_users', ['role' => 'Pengguna Umum', 'archived' => 0]),
+                'total_feedbacks' => $this->db->count('tbl_feedbacks', ['archived' => 0])
+            ];
+
+            // AMBIL 5 MATERI TERBARU (tambahkan 'type')
+            $data['recent_materials'] = $this->db->select(
+                'tbl_materials',
+                ['id', 'title', 'type'], // <-- Tambahkan 'type' di sini
+                ['archived' => 0, 'ORDER' => ['create_time' => 'DESC'], 'LIMIT' => 5]
+            );
+
+            // AMBIL 5 FEEDBACK TERBARU (tambahkan judul materi)
+            $data['recent_feedbacks'] = $this->db->select('tbl_feedbacks', [
+                '[><]tbl_users' => ['user_id' => 'id'],
+                '[><]tbl_materials' => ['material_id' => 'id'] // <-- Tambahkan JOIN ini
+            ], [
+                'tbl_feedbacks.feedback_text',
+                'tbl_users.name(user_name)',
+                'tbl_materials.title(material_title)' // <-- Tambahkan judul materi
+            ], [
+                'tbl_feedbacks.archived' => 0,
+                'ORDER' => ['tbl_feedbacks.create_time' => 'DESC'],
+                'LIMIT' => 5
+            ]);
+        }
         // Jika yang login BUKAN Admin, ambil materi yang ditugaskan
-        if ($_SESSION['user_role'] !== 'Admin') {
+        else {
             $userId = $_SESSION['user_id'];
 
-            // Query dengan JOIN untuk mengambil data materi berdasarkan penugasan
             $data['assigned_materials'] = $this->db->select('tbl_material_assignments', [
                 '[><]tbl_materials' => ['material_id' => 'id']
             ], [
