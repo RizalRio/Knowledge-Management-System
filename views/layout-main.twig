@@ -37,6 +37,30 @@
 							</form>
 						</li>
 					</ul>
+					<ul class="navbar-nav ml-auto">
+						<li class="nav-item dropdown user-menu">
+							<a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
+							<span class="d-none d-md-inline">{{ session.user_name }}</span>
+							</a>
+							<ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+							<li class="user-header bg-primary">
+								<p>
+								{{ session.user_name }}
+								<small>Role: {{ session.user_role }}</small>
+								</p>
+							</li>
+							<li class="user-footer">
+								<a href="/profile" class="btn btn-default btn-flat">Profil</a>
+								<a href="/logout" class="btn btn-default btn-flat float-right">Logout</a>
+							</li>
+							</ul>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" data-widget="fullscreen" href="#" role="button">
+							<i class="fas fa-expand-arrows-alt"></i>
+							</a>
+						</li>
+					</ul>
 				</nav>
 				<aside class="main-sidebar sidebar-dark-primary elevation-4">
 					<a href="/dashboard" class="brand-link">
