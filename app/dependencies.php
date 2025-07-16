@@ -19,6 +19,7 @@ use App\Application\Controllers\MaterialController;
 use App\Application\Controllers\FeedbackController;
 use App\Application\Controllers\UserController;
 use App\Application\Controllers\HomeController;
+use App\Application\Controllers\CategoryController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -89,6 +90,11 @@ return function (ContainerBuilder $containerBuilder) {
         HomeController::class => function (ContainerInterface $c) {
             $view = $c->get('view');
             return new HomeController($view);
+        },
+        CategoryController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            $db = $c->get('db');
+            return new CategoryController($view, $db);
         },
     ]);
 };

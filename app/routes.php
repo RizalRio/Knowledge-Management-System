@@ -15,6 +15,7 @@ use App\Application\Controllers\MaterialController;
 use App\Application\Controllers\FeedbackController;
 use App\Application\Controllers\UserController;
 use App\Application\Controllers\HomeController;
+use App\Application\Controllers\CategoryController;
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -62,6 +63,13 @@ return function (App $app) {
     $app->post('/feedbacks/assess/save/{id}', FeedbackController::class . ':storeAssessment');
     $app->post('/feedbacks/delete', FeedbackController::class . ':delete');
     $app->post('/feedback/store/{id}', FeedbackController::class . ':store');
+
+    $app->get('/categories', CategoryController::class . ':index');
+    $app->get('/api/categories', CategoryController::class . ':data');
+    $app->get('/api/category/{id}', CategoryController::class . ':getById'); // <-- TAMBAH
+    $app->post('/categories', CategoryController::class . ':store'); // <-- TAMBAH
+    $app->post('/categories/update/{id}', CategoryController::class . ':update'); // <-- TAMBAH
+    $app->post('/categories/delete/{id}', CategoryController::class . ':delete'); // <-- TAMBAH
 
     // Route untuk Logout
     $app->get('/logout', function ($request, $response) {
