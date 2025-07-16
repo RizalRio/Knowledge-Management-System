@@ -24,6 +24,18 @@
 								<i class="fas fa-bars"></i>
 							</a>
 						</li>
+						<li class="nav-item d-none d-sm-inline-block">
+							<form class="form-inline ml-3" action="/search" method="GET">
+								<div class="input-group input-group-sm">
+									<input class="form-control form-control-navbar" type="search" placeholder="Cari Materi..." aria-label="Search" name="q">
+									<div class="input-group-append">
+										<button class="btn btn-navbar" type="submit">
+											<i class="fas fa-search"></i>
+										</button>
+									</div>
+								</div>
+							</form>
+						</li>
 					</ul>
 				</nav>
 				<aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -46,6 +58,12 @@
 										<p>Dashboard</p>
 									</a>
 								</li>
+								<li class="nav-item"> {# <-- TAMBAHKAN BLOK INI #}
+									<a href="/profile" class="nav-link">
+									<i class="nav-icon fas fa-user-cog"></i>
+									<p>Profil Saya</p>
+									</a>
+								</li>
 								{# MENU KHUSUS ADMIN #}
 								{% if session.user_role == 'Admin' %}
 									<li class="nav-header">ADMINISTRATION</li>
@@ -58,6 +76,11 @@
 									<li class="nav-item"> {# <-- TAMBAHKAN BLOK INI #}
 										<a href="/categories" class="nav-link">
 											<i class="nav-icon fas fa-tags"></i><p>Manajemen Kategori</p>
+										</a>
+									</li>
+									<li class="nav-item"> {# <-- TAMBAHKAN BLOK INI #}
+										<a href="/tags" class="nav-link">
+											<i class="nav-icon fas fa-tags"></i><p>Manajemen Tag</p>
 										</a>
 									</li>
 									<li class="nav-item">

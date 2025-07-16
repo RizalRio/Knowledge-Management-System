@@ -1,0 +1,168 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Manajemen Tag{% endblock %}
+{% block page_title %}Manajemen Tag{% endblock %}
+
+{% block head_styles %}
+  <link rel="stylesheet" href="/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Daftar Semua Tag</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-primary btn-sm" id="add-new-btn">
+                        <i class="fas fa-plus"></i> Tambah Tag Baru
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table id="tags-table" class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama Tag</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="tag-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-title">Tambah Tag Baru</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="tag-form">
+                <div class="modal-body">
+                    <input type="hidden" id="tag_id" name="id">
+                    <div class="form-group">
+                        <label for="name">Nama Tag</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script>
+$(function() {
+    // ## Inisialisasi DataTable
+    var table = $('#tags-table').DataTable({
+        "processing": true,
+        "ajax": "/api/tags",
+        "columns": [
+            { "data": "id" },
+            { "data": "name" },
+            {
+                "data": "id",
+                "render": function(data, type, row) {
+                    return `
+                        <button class="btn btn-warning btn-xs edit-btn" data-id="${data}">Edit</button>
+                        <button class="btn btn-danger btn-xs delete-btn" data-id="${data}">Hapus</button>
+                    `;
+                },
+                "orderable": false
+            }
+        ],
+        "responsive": true, 
+        "lengthChange": false, 
+        "autoWidth": false,
+    });
+
+    // ## Logika Tombol "Tambah Tag Baru"
+    $('#add-new-btn').on('click', function() {
+        $('#tag-form')[0].reset();
+        $('#tag_id').val('');
+        $('#modal-title').text('Tambah Tag Baru');
+        $('#tag-modal').modal('show');
+    });
+
+    // ## Logika Tombol Edit di Tabel
+    $('#tags-table tbody').on('click', '.edit-btn', function() {
+        var id = $(this).data('id');
+        $.ajax({
+            url: `/api/tag/${id}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                $('#tag-form')[0].reset();
+                $('#tag_id').val(response.id);
+                $('#name').val(response.name);
+                $('#modal-title').text('Edit Tag');
+                $('#tag-modal').modal('show');
+            }
+        });
+    });
+
+    // ## Logika Form Submit (untuk Tambah & Edit)
+    $('#tag-form').on('submit', function(e) {
+        e.preventDefault();
+        var id = $('#tag_id').val();
+        var url = id ? `/tags/update/${id}` : '/tags';
+        var formData = $(this).serialize();
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                $('#tag-modal').modal('hide');
+                Swal.fire('Berhasil!', response.message, 'success');
+                table.ajax.reload();
+            },
+            error: function(xhr) {
+                var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+                Swal.fire('Gagal!', errorMsg, 'error');
+            }
+        });
+    });
+
+    // ## Logika Tombol Hapus di Tabel
+    $('#tags-table tbody').on('click', '.delete-btn', function() {
+        var id = $(this).data('id');
+        Swal.fire({
+            title: 'Anda Yakin?',
+            text: "Tag yang dihapus tidak bisa dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Ya, Hapus!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/tags/delete/${id}`,
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function(response) {
+                        Swal.fire('Dihapus!', response.message, 'success');
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

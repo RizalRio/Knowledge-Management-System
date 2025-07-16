@@ -14,6 +14,32 @@
                 <label for="title">Judul Materi</label>
                 <input type="text" class="form-control" id="title" name="title" placeholder="Masukkan judul materi" required>
             </div>
+            {# ... di dalam form ... #}
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        {% for category in categories %}
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="cat_{{ category.id }}" name="category_ids[]" value="{{ category.id }}">
+                                <label for="cat_{{ category.id }}" class="custom-control-label">{{ category.name }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label>Tag</label>
+                        {% for tag in tags %}
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="tag_{{ tag.id }}" name="tag_ids[]" value="{{ tag.id }}">
+                                <label for="tag_{{ tag.id }}" class="custom-control-label">{{ tag.name }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {# ... #}
             <div class="form-group">
                 <label for="description">Deskripsi</label>
                 <textarea class="form-control" id="description" name="description" rows="3" placeholder="Masukkan deskripsi singkat"></textarea>

@@ -46,18 +46,31 @@ class MaterialController
 
         // Ambil data dari database
         $materials = $this->db->select('tbl_materials', [
-            "[><]tbl_users" => ["create_id" => "id"] // JOIN dengan tabel user
+            "[><]tbl_users" => ["create_id" => "id"]
         ], [
             'tbl_materials.id',
             'tbl_materials.title',
             'tbl_materials.type',
-            'tbl_users.name(creator_name)', // Ambil nama pembuat
+            'tbl_users.name(creator_name)',
             'tbl_materials.create_time'
         ], [
             'tbl_materials.archived' => 0
         ]);
 
-        // Format data agar sesuai dengan yang diminta DataTables
+        // Loop untuk mengambil kategori dan tag untuk setiap materi
+        foreach ($materials as &$material) {
+            $categories = $this->db->select('tbl_material_categories', [
+                '[><]tbl_categories' => ['category_id' => 'id']
+            ], 'tbl_categories.name', ['material_id' => $material['id']]);
+
+            $tags = $this->db->select('tbl_material_tags', [
+                '[><]tbl_tags' => ['tag_id' => 'id']
+            ], 'tbl_tags.name', ['material_id' => $material['id']]);
+
+            $material['categories'] = $categories;
+            $material['tags'] = $tags;
+        }
+
         $output = ['data' => $materials];
         $payload = json_encode($output);
         $response->getBody()->write($payload);
@@ -74,7 +87,9 @@ class MaterialController
 
         $body = $this->view->render('material/material-create.twig', [
             'session' => $_SESSION,
-            'current_path' => $request->getUri()->getPath()
+            // Ambil semua kategori & tag yang aktif
+            'categories' => $this->db->select('tbl_categories', ['id', 'name'], ['archived' => 0]),
+            'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0])
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -123,6 +138,27 @@ class MaterialController
             'content' => $content,
             'create_id' => $_SESSION['user_id']
         ]);
+        $materialId = $this->db->id(); // Ambil ID materi yang baru saja di-insert
+
+        // Simpan relasi kategori & tag
+        $categoryIds = $data['category_ids'] ?? [];
+        $tagIds = $data['tag_ids'] ?? [];
+
+        if (!empty($categoryIds)) {
+            $categoryData = [];
+            foreach ($categoryIds as $catId) {
+                $categoryData[] = ['material_id' => $materialId, 'category_id' => $catId];
+            }
+            $this->db->insert('tbl_material_categories', $categoryData);
+        }
+
+        if (!empty($tagIds)) {
+            $tagData = [];
+            foreach ($tagIds as $tagId) {
+                $tagData[] = ['material_id' => $materialId, 'tag_id' => $tagId];
+            }
+            $this->db->insert('tbl_material_tags', $tagData);
+        }
 
         $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Materi baru berhasil disimpan!']));
         return $response->withHeader('Content-Type', 'application/json');
@@ -172,10 +208,16 @@ class MaterialController
             return $response->withHeader('Location', '/materials')->withStatus(302);
         }
 
+        $selectedCategoryIds = $this->db->select('tbl_material_categories', 'category_id', ['material_id' => $materialId]);
+        $selectedTagIds = $this->db->select('tbl_material_tags', 'tag_id', ['material_id' => $materialId]);
+
         $body = $this->view->render('material/material-edit.twig', [
             'session' => $_SESSION,
             'material' => $material,
-            'current_path' => $request->getUri()->getPath()
+            'categories' => $this->db->select('tbl_categories', ['id', 'name'], ['archived' => 0]),
+            'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0]),
+            'selected_category_ids' => $selectedCategoryIds,
+            'selected_tag_ids' => $selectedTagIds
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -218,6 +260,28 @@ class MaterialController
         // Jika tidak ada file baru, kita tidak mengubah kolom 'content'.
 
         $this->db->update('tbl_materials', $updateData, ['id' => $materialId]);
+
+        // Sinkronisasi kategori & tag (hapus yang lama, insert yang baru)
+        $categoryIds = $data['category_ids'] ?? [];
+        $tagIds = $data['tag_ids'] ?? [];
+
+        $this->db->delete('tbl_material_categories', ['material_id' => $materialId]);
+        if (!empty($categoryIds)) {
+            $categoryData = [];
+            foreach ($categoryIds as $catId) {
+                $categoryData[] = ['material_id' => $materialId, 'category_id' => $catId];
+            }
+            $this->db->insert('tbl_material_categories', $categoryData);
+        }
+
+        $this->db->delete('tbl_material_tags', ['material_id' => $materialId]);
+        if (!empty($tagIds)) {
+            $tagData = [];
+            foreach ($tagIds as $tagId) {
+                $tagData[] = ['material_id' => $materialId, 'tag_id' => $tagId];
+            }
+            $this->db->insert('tbl_material_tags', $tagData);
+        }
 
         $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Materi berhasil diperbarui!']));
         return $response->withHeader('Content-Type', 'application/json');
@@ -336,10 +400,15 @@ class MaterialController
             "archived" => 0
         ]);
 
+        $categories = $this->db->select('tbl_material_categories', ['[><]tbl_categories' => ['category_id' => 'id']], 'tbl_categories.name', ['material_id' => $materialId]);
+        $tags = $this->db->select('tbl_material_tags', ['[><]tbl_tags' => ['tag_id' => 'id']], 'tbl_tags.name', ['material_id' => $materialId]);
+
         // 6. Tampilkan halaman dengan semua data yang diperlukan
         $body = $this->view->render('material/material-view.twig', [
             'session' => $_SESSION,
             'material' => $material,
+            'categories' => $categories, // <-- KIRIM KE VIEW
+            'tags' => $tags,
             'feedback' => $existingFeedback,
             'current_path' => $request->getUri()->getPath()
         ]);

@@ -1,0 +1,103 @@
+{% extends "layout-main.twig" %}
+
+{% block title %}Profil Saya{% endblock %}
+{% block page_title %}Profil Saya{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Informasi Profil</h3>
+            </div>
+            <form id="profile-form">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" value="{{ user.email }}" readonly>
+                        <small class="form-text text-muted">Email tidak dapat diubah.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Nama Lengkap</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-danger">
+            <div class="card-header">
+                <h3 class="card-title">Ganti Password</h3>
+            </div>
+            <form id="password-form">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="old_password">Password Lama</label>
+                        <input type="password" class="form-control" id="old_password" name="old_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new_password">Password Baru</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Konfirmasi Password Baru</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-danger">Ganti Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+    // AJAX untuk form update profil
+    $('#profile-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        $.ajax({
+            url: '/profile/update',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                Swal.fire('Berhasil!', response.message, 'success').then(() => {
+                    location.reload(); // Reload halaman agar nama di sidebar terupdate
+                });
+            },
+            error: function(xhr) { Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error'); }
+        });
+    });
+
+    // AJAX untuk form ganti password
+    $('#password-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        $.ajax({
+            url: '/profile/password',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                Swal.fire('Berhasil!', response.message, 'success');
+                $('#password-form')[0].reset(); // Kosongkan form password
+            },
+            error: function(xhr) {
+                var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+                Swal.fire('Gagal!', errorMsg, 'error');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

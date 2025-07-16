@@ -25,6 +25,7 @@
       <tr>
         <th>ID</th>
         <th>Judul Materi</th>
+        <th>Kategori & Tag</th>
         <th>Tipe</th>
         <th>Dibuat Oleh</th>
         <th>Tanggal Dibuat</th>
@@ -57,6 +58,24 @@ $(function () {
     "columns": [
         { "data": "id" },
         { "data": "title" },
+        { 
+            "data": null, // Kita akan buat kontennya secara manual
+            "render": function(data, type, row) {
+                var categoriesHtml = '';
+                var tagsHtml = '';
+
+                row.categories.forEach(function(cat) {
+                    categoriesHtml += `<span class="badge badge-primary mr-1">${cat}</span>`;
+                });
+
+                row.tags.forEach(function(tag) {
+                    tagsHtml += `<span class="badge badge-info mr-1">${tag}</span>`;
+                });
+
+                return categoriesHtml + tagsHtml;
+            },
+            "orderable": false
+        },
         { "data": "type" },
         { "data": "creator_name" },
         { 

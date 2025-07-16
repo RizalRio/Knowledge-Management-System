@@ -20,6 +20,9 @@ use App\Application\Controllers\FeedbackController;
 use App\Application\Controllers\UserController;
 use App\Application\Controllers\HomeController;
 use App\Application\Controllers\CategoryController;
+use App\Application\Controllers\TagController;
+use App\Application\Controllers\ProfileController;
+use App\Application\Controllers\SearchController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -95,6 +98,21 @@ return function (ContainerBuilder $containerBuilder) {
             $view = $c->get('view');
             $db = $c->get('db');
             return new CategoryController($view, $db);
+        },
+        TagController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            $db = $c->get('db');
+            return new TagController($view, $db);
+        },
+        ProfileController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            $db = $c->get('db');
+            return new ProfileController($view, $db);
+        },
+        SearchController::class => function (ContainerInterface $c) {
+            $view = $c->get('view');
+            $db = $c->get('db');
+            return new SearchController($view, $db);
         },
     ]);
 };

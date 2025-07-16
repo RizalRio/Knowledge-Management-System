@@ -16,6 +16,9 @@ use App\Application\Controllers\FeedbackController;
 use App\Application\Controllers\UserController;
 use App\Application\Controllers\HomeController;
 use App\Application\Controllers\CategoryController;
+use App\Application\Controllers\TagController;
+use App\Application\Controllers\ProfileController;
+use App\Application\Controllers\SearchController;
 
 return function (App $app) {
     $app->options('/{routes:.*}', function (Request $request, Response $response) {
@@ -70,6 +73,21 @@ return function (App $app) {
     $app->post('/categories', CategoryController::class . ':store'); // <-- TAMBAH
     $app->post('/categories/update/{id}', CategoryController::class . ':update'); // <-- TAMBAH
     $app->post('/categories/delete/{id}', CategoryController::class . ':delete'); // <-- TAMBAH
+
+    $app->get('/tags', TagController::class . ':index');
+    $app->get('/api/tags', TagController::class . ':data');
+    $app->get('/api/tag/{id}', TagController::class . ':getById');
+    $app->post('/tags', TagController::class . ':store');
+    $app->post('/tags/update/{id}', TagController::class . ':update');
+    $app->post('/tags/delete/{id}', TagController::class . ':delete');
+
+    // Route untuk Profil
+    $app->get('/profile', ProfileController::class . ':index');
+    $app->post('/profile/update', ProfileController::class . ':updateProfile');
+    $app->post('/profile/password', ProfileController::class . ':updatePassword');
+
+    // Route untuk Pencarian
+    $app->get('/search', SearchController::class . ':results');
 
     // Route untuk Logout
     $app->get('/logout', function ($request, $response) {

@@ -41,34 +41,34 @@
 {% block scripts %}
 	<script>
 		$(document).ready(function () {
-$('#edit-user-form').on('submit', function (e) {
-e.preventDefault();
-var formData = $(this).serialize();
+		$('#edit-user-form').on('submit', function (e) {
+		e.preventDefault();
+		var formData = $(this).serialize();
 
-Swal.fire({
-title: 'Updating...',
-allowOutsideClick: false,
-didOpen: () => {
-Swal.showLoading();
-}
-});
+		Swal.fire({
+		title: 'Updating...',
+		allowOutsideClick: false,
+		didOpen: () => {
+		Swal.showLoading();
+		}
+		});
 
-$.ajax({
-url: '/users/update/  {{ user.id }}',
-type: 'POST',
-data: formData,
-dataType: 'json',
-success: function (response) {
-Swal.fire({icon: 'success', title: 'Berhasil!', text: response.message}).then(() => {
-window.location.href = '/users';
-});
-},
-error: function (xhr) {
-var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
-Swal.fire({icon: 'error', title: 'Oops...', text: errorMsg});
-}
-});
-});
-});
+		$.ajax({
+		url: '/users/update/  {{ user.id }}',
+		type: 'POST',
+		data: formData,
+		dataType: 'json',
+		success: function (response) {
+		Swal.fire({icon: 'success', title: 'Berhasil!', text: response.message}).then(() => {
+		window.location.href = '/users';
+		});
+		},
+		error: function (xhr) {
+		var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.';
+		Swal.fire({icon: 'error', title: 'Oops...', text: errorMsg});
+		}
+		});
+		});
+		});
 	</script>
 {% endblock %}
