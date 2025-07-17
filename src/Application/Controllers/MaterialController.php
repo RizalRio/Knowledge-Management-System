@@ -24,7 +24,10 @@ class MaterialController
             return $response->withHeader('Location', '/dashboard')->withStatus(302);
         }
 
-        $body = $this->view->render('material/material-index.twig', ['session' => $_SESSION]);
+        $body = $this->view->render('material/material-index.twig', [
+            'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
+        ]);
         $response->getBody()->write($body);
         return $response;
     }
@@ -71,7 +74,8 @@ class MaterialController
         $body = $this->view->render('material/material-create.twig', [
             'session' => $_SESSION,
             'categories' => $this->db->select('tbl_categories', ['id', 'name'], ['archived' => 0]),
-            'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0])
+            'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0]),
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -158,7 +162,8 @@ class MaterialController
             'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0]),
             'selected_category_ids' => $selectedCategoryIds,
             'selected_tag_ids' => $selectedTagIds,
-            'active_menu' => 'materials'
+            'active_menu' => 'materials',
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;
@@ -226,6 +231,73 @@ class MaterialController
 
         $this->db->update('tbl_materials', ['archived' => 1, 'update_time' => date('Y-m-d H:i:s'), 'update_id' => $_SESSION['user_id']], ['id' => $materialId]);
         $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Materi berhasil dihapus.']));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function showAssignForm(Request $request, Response $response, array $args): Response
+    {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
+            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+        }
+
+        $materialId = $args['id'];
+        $material = $this->db->get('tbl_materials', ['id', 'title'], ['id' => $materialId]);
+
+        if (!$material) {
+            return $response->withHeader('Location', '/materials')->withStatus(302);
+        }
+
+        // Ambil semua user dengan role 'Pengguna Umum'
+        $users = $this->db->select('tbl_users', ['id', 'name', 'email'], ['role' => 'Pengguna Umum', 'archived' => 0]);
+
+        // Ambil data user yang sudah ditugaskan materi ini
+        $assignedUserIds = $this->db->select('tbl_material_assignments', 'user_id', ['material_id' => $materialId]);
+
+        // Tambahkan flag 'is_assigned' ke data user untuk menandai checkbox
+        foreach ($users as &$user) {
+            $user['is_assigned'] = in_array($user['id'], $assignedUserIds);
+        }
+
+        $body = $this->view->render('material/material-assign.twig', [
+            'session' => $_SESSION,
+            'material' => $material,
+            'users' => $users,
+            'current_path' => $request->getUri()->getPath()
+        ]);
+        $response->getBody()->write($body);
+        return $response;
+    }
+
+    // Method untuk menyimpan data penugasan
+    public function storeAssignment(Request $request, Response $response, array $args): Response
+    {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
+            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Unauthorized']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
+        }
+
+        $materialId = $args['id'];
+        $data = $request->getParsedBody();
+        $assignedUserIds = $data['user_ids'] ?? []; // Ambil array user_id dari form
+
+        // Strategi Sinkronisasi: Hapus semua penugasan lama, lalu buat yang baru.
+        // 1. Hapus semua penugasan untuk materi ini
+        $this->db->delete('tbl_material_assignments', ['material_id' => $materialId]);
+
+        // 2. Jika ada user yang dipilih, insert penugasan baru
+        if (!empty($assignedUserIds)) {
+            $newAssignments = [];
+            foreach ($assignedUserIds as $userId) {
+                $newAssignments[] = [
+                    'material_id' => $materialId,
+                    'user_id' => $userId,
+                    'create_id' => $_SESSION['user_id']
+                ];
+            }
+            $this->db->insert('tbl_material_assignments', $newAssignments);
+        }
+
+        $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Penugasan materi berhasil diperbarui!']));
         return $response->withHeader('Content-Type', 'application/json');
     }
 

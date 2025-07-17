@@ -122,7 +122,7 @@
 								{% elseif session.user_role == 'Kontributor' %}
 									<li class="nav-header">KONTEN SAYA</li>
 									<li class="nav-item">
-										<a href="/materials" class="nav-link {{ active_menu == 'materials' ? 'active' : '' }}">
+										<a href="/materials" class="nav-link {% if current_path starts with '/materials' %}active{% endif %}">
 											<i class="nav-icon fas fa-book"></i>
 											<p>Materi Saya</p>
 										</a>
