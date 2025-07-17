@@ -83,7 +83,7 @@
 									</a>
 								</li>
 								<li class="nav-item"> {# <-- TAMBAHKAN BLOK INI #}
-									<a href="/profile" class="nav-link">
+									<a href="/profile" class="nav-link {% if current_path starts with '/profile' %}active{% endif %}">
 									<i class="nav-icon fas fa-user-cog"></i>
 									<p>Profil Saya</p>
 									</a>
@@ -98,12 +98,12 @@
 										</a>
 									</li>
 									<li class="nav-item"> {# <-- TAMBAHKAN BLOK INI #}
-										<a href="/categories" class="nav-link">
+										<a href="/categories" class="nav-link {% if current_path starts with '/categories' %}active{% endif %}">
 											<i class="nav-icon fas fa-tags"></i><p>Manajemen Kategori</p>
 										</a>
 									</li>
 									<li class="nav-item"> {# <-- TAMBAHKAN BLOK INI #}
-										<a href="/tags" class="nav-link">
+										<a href="/tags" class="nav-link {% if current_path starts with '/tags' %}active{% endif %}">
 											<i class="nav-icon fas fa-tags"></i><p>Manajemen Tag</p>
 										</a>
 									</li>
@@ -151,7 +151,7 @@
 					</div>
 					<footer class="main-footer">
 						<strong>Copyright &copy; 2024-2025
-							<a href="#">KMS Project</a>.</strong>
+							<a href="/dashboard">KMS Project</a>.</strong>
 						All rights reserved.
 					</footer>
 				</div>

@@ -51,6 +51,10 @@
                     </dd>
                     <dt class="col-sm-4">Materi Terkait</dt>
                     <dd class="col-sm-8">{{ feedback.material_title }}</dd>
+                    <dt class="col-sm-4">Kategori</dt>
+                    <dd class="col-sm-8">{{ categories|join(', ') }}</dd>
+                    <dt class="col-sm-4">Tags</dt>
+                    <dd class="col-sm-8">{{ tags|join(', ') }}</dd>
                     <div class="card-body">
                         {# Tampilkan konten berdasarkan tipe #}
                         {% if feedback.material_type == 'PDF' %}

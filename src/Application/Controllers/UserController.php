@@ -36,8 +36,21 @@ class UserController
 
     public function data(Request $request, Response $response): Response
     {
-        // Hanya tampilkan user yang archived = 0
-        $users = $this->db->select('tbl_users', '*', ['archived' => 0]);
+        // Ambil semua query parameter dari URL
+        $params = $request->getQueryParams();
+        $roleToFilter = $params['role'] ?? null;
+
+        // Siapkan kondisi dasar untuk query
+        $conditions = ['archived' => 0];
+
+        // JIKA ada parameter 'role', tambahkan ke kondisi query
+        if ($roleToFilter) {
+            $conditions['role'] = $roleToFilter;
+        }
+
+        // Lakukan query ke database dengan kondisi yang sudah disiapkan
+        $users = $this->db->select('tbl_users', '*', $conditions);
+
         $payload = json_encode(['data' => $users]);
         $response->getBody()->write($payload);
         return $response->withHeader('Content-Type', 'application/json');
@@ -52,6 +65,7 @@ class UserController
 
         $response->getBody()->write($this->view->render('user/user-create.twig', [
             'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
         ]));
 
         return $response;
@@ -118,7 +132,11 @@ class UserController
         }
 
         // Render the edit user template
-        $response->getBody()->write($this->view->render('user/user-edit.twig', ['user' => $user]));
+        $response->getBody()->write($this->view->render('user/user-edit.twig', [
+            'user' => $user,
+            'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
+        ]));
         return $response;
     }
 

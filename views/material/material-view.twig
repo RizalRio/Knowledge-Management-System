@@ -9,7 +9,7 @@
     .display-star-rating {
         font-size: 1.2rem;
         color: #ffc107;
-        margin-bottom: 10px;
+        
     }
     .display-star-rating .inactive {
         color: #d3d3d3;
@@ -76,6 +76,7 @@
                 <h3 class="card-title">Feedback</h3>
             </div>
             <div class="card-body" id="feedback-card-body">
+            {% if session.user_role == 'Pengguna Umum' %}
                 {% if feedback %}
                     <div class="alert alert-success">
                         Anda telah mengirimkan feedback pada {{ feedback.create_time|date("d M Y H:i") }}.
@@ -84,7 +85,7 @@
                     <div class="display-star-rating">
                         {% for i in 1..5 %}<i class="fas fa-star {% if i > feedback.material_rating %}inactive{% endif %}"></i>{% endfor %}
                     </div>
-                    <p><strong>Tanggapan Anda:</strong></p>
+                    <p style="margin-top: 10px;"><strong>Tanggapan Anda:</strong></p>
                     <p>{{ feedback.feedback_text }}</p>
 
                     {% if feedback.assessment_score %}
@@ -121,6 +122,32 @@
                         </div>
                     </form>
                 {% endif %}
+            {% else %}
+                {% for fb in all_feedbacks %}
+                    <div class="mb-3">
+                        <p class="score"><strong>{{ fb.user_name }}</strong> - {{ feedback.create_time|date("d M Y H:i") }}</p>
+                        <div class="display-star-rating">
+                            {% for i in 1..5 %}
+                                <i class="fas fa-star {% if i > fb.material_rating %}inactive{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <p>{{ fb.feedback_text }}</p>
+                        {% if fb.assessment_score %}
+                            <hr>
+                            <h4>Penilaian HR</h4>
+                            <p class="score"><strong>Skor:</strong></p>
+                            <div class="display-star-rating">
+                                {% for i in 1..5 %}
+                                    <i class="fas fa-star {% if i > fb.assessment_score %}inactive{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <p><strong>Catatan:</strong> {{ fb.assessment_notes }}</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p>Belum ada feedback untuk materi ini.</p>
+                {% endfor %}
+            {% endif %}
             </div>
         </div>
     </div>

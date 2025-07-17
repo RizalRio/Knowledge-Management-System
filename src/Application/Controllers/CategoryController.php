@@ -26,7 +26,8 @@ class CategoryController
         }
 
         $body = $this->view->render('category/category-index.twig', [
-            'session' => $_SESSION
+            'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;

@@ -53,7 +53,7 @@ $('#users-table').DataTable({
 "processing": true,
 "serverSide": false,
 "ajax": {
-"url": "/users/api",
+"url": "/users/api" + window.location.search,
 "type": "GET"
 },
 "columns": [

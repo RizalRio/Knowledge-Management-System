@@ -136,9 +136,28 @@ class FeedbackController
             return $response->withHeader('Location', '/feedbacks')->withStatus(404);
         }
 
+        // Tambahkan Kategori dan Tag
+        $materialId = $feedback['material_id'];
+
+        // Ambil semua kategori yang terhubung dengan materi ini
+        $categories = $this->db->select('tbl_material_categories', [
+            '[><]tbl_categories' => ['category_id' => 'id']
+        ], 'tbl_categories.name', [
+            'tbl_material_categories.material_id' => $materialId
+        ]);
+
+        // Ambil semua tag yang terhubung dengan materi ini
+        $tags = $this->db->select('tbl_material_tags', [
+            '[><]tbl_tags' => ['tag_id' => 'id']
+        ], 'tbl_tags.name', [
+            'tbl_material_tags.material_id' => $materialId
+        ]);
+
         $body = $this->view->render('feedback/feedback-form.twig', [
             'session' => $_SESSION,
             'feedback' => $feedback,
+            'categories' => $categories,
+            'tags' => $tags,
             'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);

@@ -26,7 +26,8 @@ class TagController
         }
 
         $body = $this->view->render('tag/tag-index.twig', [
-            'session' => $_SESSION
+            'session' => $_SESSION,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;

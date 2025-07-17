@@ -29,7 +29,8 @@ class ProfileController
 
         $body = $this->view->render('profile.twig', [
             'session' => $_SESSION,
-            'user' => $user
+            'user' => $user,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;

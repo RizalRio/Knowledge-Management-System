@@ -365,6 +365,7 @@ class MaterialController
         // 2. Ambil ID dari URL dan session
         $materialId = $args['id'];
         $userId = $_SESSION['user_id'];
+        $userRole = $_SESSION['user_role'];
 
         // 3. Lakukan Pengecekan Keamanan: Pastikan pengguna berhak mengakses materi ini
         $isAssigned = $this->db->has('tbl_material_assignments', [
@@ -393,25 +394,44 @@ class MaterialController
             return $response->withStatus(404);
         }
 
-        // 5. Ambil data feedback yang sudah ada untuk materi dan pengguna ini
-        $existingFeedback = $this->db->get("tbl_feedbacks", "*", [
-            "material_id" => $materialId,
-            "user_id" => $userId,
-            "archived" => 0
-        ]);
-
         $categories = $this->db->select('tbl_material_categories', ['[><]tbl_categories' => ['category_id' => 'id']], 'tbl_categories.name', ['material_id' => $materialId]);
         $tags = $this->db->select('tbl_material_tags', ['[><]tbl_tags' => ['tag_id' => 'id']], 'tbl_tags.name', ['material_id' => $materialId]);
 
-        // 6. Tampilkan halaman dengan semua data yang diperlukan
-        $body = $this->view->render('material/material-view.twig', [
+        // Siapkan data dasar untuk dikirim ke view
+        $viewData = [
             'session' => $_SESSION,
             'material' => $material,
-            'categories' => $categories, // <-- KIRIM KE VIEW
+            'categories' => $categories,
             'tags' => $tags,
-            'feedback' => $existingFeedback,
             'current_path' => $request->getUri()->getPath()
-        ]);
+        ];
+
+        // 5. PERUBAHAN UTAMA: Logika pengambilan feedback berdasarkan peran
+        if ($userRole === 'Pengguna Umum') {
+            // Jika Pengguna Umum, ambil HANYA feedback miliknya sendiri
+            $viewData['feedback'] = $this->db->get("tbl_feedbacks", "*", [
+                "material_id" => $materialId,
+                "user_id" => $userId,
+                "archived" => 0
+            ]);
+        } else {
+            // Jika Admin atau Kontributor, ambil SEMUA feedback untuk materi ini
+            $viewData['all_feedbacks'] = $this->db->select("tbl_feedbacks", [
+                "[>]tbl_users" => ["user_id" => "id"]
+            ], [
+                "tbl_users.name(user_name)",
+                "tbl_feedbacks.material_rating",
+                "tbl_feedbacks.feedback_text",
+                "tbl_feedbacks.create_time"
+            ], [
+                "tbl_feedbacks.material_id" => $materialId,
+                "tbl_feedbacks.archived" => 0,
+                "ORDER" => ["tbl_feedbacks.create_time" => "DESC"]
+            ]);
+        }
+
+        // 6. Tampilkan halaman dengan semua data yang diperlukan
+        $body = $this->view->render('material/material-view.twig', $viewData);
         $response->getBody()->write($body);
         return $response;
     }
