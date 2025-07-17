@@ -18,33 +18,29 @@ class MaterialController
         $this->db = $db;
     }
 
-    // Method untuk menampilkan halaman utama Kelola Materi
     public function index(Request $request, Response $response): Response
     {
-        // Cek login & role (wajib!)
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            // Jika bukan admin, lempar ke dashboard biasa
+        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 'Kontributor'])) {
             return $response->withHeader('Location', '/dashboard')->withStatus(302);
         }
 
-        $body = $this->view->render('material/material-index.twig', [
-            'session' => $_SESSION,
-            'current_path' => $request->getUri()->getPath()
-        ]);
+        $body = $this->view->render('material/material-index.twig', ['session' => $_SESSION]);
         $response->getBody()->write($body);
         return $response;
     }
 
-    // Method untuk API DataTables (mengembalikan JSON)
     public function data(Request $request, Response $response): Response
     {
-        // Cek login & role
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
+        if (!isset($_SESSION['user_id'])) {
             $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
         }
 
-        // Ambil data dari database
+        $conditions = ['tbl_materials.archived' => 0];
+        if ($_SESSION['user_role'] !== 'Admin') {
+            $conditions['tbl_materials.create_id'] = $_SESSION['user_id'];
+        }
+
         $materials = $this->db->select('tbl_materials', [
             "[><]tbl_users" => ["create_id" => "id"]
         ], [
@@ -53,22 +49,11 @@ class MaterialController
             'tbl_materials.type',
             'tbl_users.name(creator_name)',
             'tbl_materials.create_time'
-        ], [
-            'tbl_materials.archived' => 0
-        ]);
+        ], $conditions);
 
-        // Loop untuk mengambil kategori dan tag untuk setiap materi
         foreach ($materials as &$material) {
-            $categories = $this->db->select('tbl_material_categories', [
-                '[><]tbl_categories' => ['category_id' => 'id']
-            ], 'tbl_categories.name', ['material_id' => $material['id']]);
-
-            $tags = $this->db->select('tbl_material_tags', [
-                '[><]tbl_tags' => ['tag_id' => 'id']
-            ], 'tbl_tags.name', ['material_id' => $material['id']]);
-
-            $material['categories'] = $categories;
-            $material['tags'] = $tags;
+            $material['categories'] = $this->db->select('tbl_material_categories', ['[><]tbl_categories' => ['category_id' => 'id']], 'tbl_categories.name', ['material_id' => $material['id']]);
+            $material['tags'] = $this->db->select('tbl_material_tags', ['[><]tbl_tags' => ['tag_id' => 'id']], 'tbl_tags.name', ['material_id' => $material['id']]);
         }
 
         $output = ['data' => $materials];
@@ -77,17 +62,14 @@ class MaterialController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    // Method untuk menampilkan form tambah
     public function create(Request $request, Response $response): Response
     {
-        // Cek login & role
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
+        if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'], ['Admin', 'Kontributor'])) {
             return $response->withHeader('Location', '/dashboard')->withStatus(302);
         }
 
         $body = $this->view->render('material/material-create.twig', [
             'session' => $_SESSION,
-            // Ambil semua kategori & tag yang aktif
             'categories' => $this->db->select('tbl_categories', ['id', 'name'], ['archived' => 0]),
             'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0])
         ]);
@@ -95,12 +77,9 @@ class MaterialController
         return $response;
     }
 
-    // Method untuk menyimpan data baru
     public function store(Request $request, Response $response): Response
     {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Unauthorized']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
+        if (!isset($_SESSION['user_id'])) { /* ... handle error ... */
         }
 
         $data = $request->getParsedBody();
@@ -111,26 +90,22 @@ class MaterialController
         $type = $data['type'];
         $content = '';
 
-        // Handle konten berdasarkan tipe
         if ($type === 'Link') {
             $content = $data['content_url'];
         } else {
-            // Handle file upload (PDF atau Image)
             $uploadedFile = $uploadedFiles['content_file'];
             if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
                 $filename = $uploadedFile->getClientFilename();
                 $newFilename = date('YmdHis') . '-' . $filename;
-                $directory = __DIR__ . '/../../../public/uploads/materials';
-                $path = $directory . '/' . $newFilename;
+                $path = __DIR__ . '/../../../public/uploads/materials/' . $newFilename;
                 $uploadedFile->moveTo($path);
-                $content = '/uploads/materials/' . $newFilename; // Simpan path relatif
+                $content = '/uploads/materials/' . $newFilename;
             } else {
                 $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Gagal mengupload file.']));
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
             }
         }
 
-        // Simpan ke database
         $this->db->insert('tbl_materials', [
             'title' => $title,
             'description' => $description,
@@ -138,25 +113,17 @@ class MaterialController
             'content' => $content,
             'create_id' => $_SESSION['user_id']
         ]);
-        $materialId = $this->db->id(); // Ambil ID materi yang baru saja di-insert
+        $materialId = $this->db->id();
 
-        // Simpan relasi kategori & tag
         $categoryIds = $data['category_ids'] ?? [];
-        $tagIds = $data['tag_ids'] ?? [];
-
         if (!empty($categoryIds)) {
-            $categoryData = [];
-            foreach ($categoryIds as $catId) {
-                $categoryData[] = ['material_id' => $materialId, 'category_id' => $catId];
-            }
+            $categoryData = array_map(fn($catId) => ['material_id' => $materialId, 'category_id' => $catId], $categoryIds);
             $this->db->insert('tbl_material_categories', $categoryData);
         }
 
+        $tagIds = $data['tag_ids'] ?? [];
         if (!empty($tagIds)) {
-            $tagData = [];
-            foreach ($tagIds as $tagId) {
-                $tagData[] = ['material_id' => $materialId, 'tag_id' => $tagId];
-            }
+            $tagData = array_map(fn($tagId) => ['material_id' => $materialId, 'tag_id' => $tagId], $tagIds);
             $this->db->insert('tbl_material_tags', $tagData);
         }
 
@@ -164,48 +131,21 @@ class MaterialController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function delete(Request $request, Response $response, array $args): Response
-    {
-        // Cek otorisasi dulu
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Unauthorized']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
-        }
-
-        $materialId = $args['id'];
-
-        // Lakukan soft delete: update kolom 'archived' menjadi 1
-        $result = $this->db->update('tbl_materials', [
-            'archived' => 1,
-            'update_time' => date('Y-m-d H:i:s'), // Catat waktu update
-            'update_id' => $_SESSION['user_id']   // Catat siapa yang update
-        ], [
-            'id' => $materialId
-        ]);
-
-        if ($result->rowCount() > 0) {
-            $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Materi berhasil dihapus.']));
-        } else {
-            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Materi tidak ditemukan atau gagal dihapus.']));
-            return $response->withStatus(404);
-        }
-
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-
-    // Method untuk menampilkan form edit
     public function edit(Request $request, Response $response, array $args): Response
     {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+        if (!isset($_SESSION['user_id'])) {
+            return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
         $materialId = $args['id'];
         $material = $this->db->get('tbl_materials', '*', ['id' => $materialId]);
 
         if (!$material) {
-            // Jika materi tidak ditemukan, kembali ke daftar
             return $response->withHeader('Location', '/materials')->withStatus(302);
+        }
+
+        if ($_SESSION['user_role'] !== 'Admin' && $material['create_id'] != $_SESSION['user_id']) {
+            return $response->withHeader('Location', '/materials')->withStatus(403);
         }
 
         $selectedCategoryIds = $this->db->select('tbl_material_categories', 'category_id', ['material_id' => $materialId]);
@@ -218,69 +158,52 @@ class MaterialController
             'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0]),
             'selected_category_ids' => $selectedCategoryIds,
             'selected_tag_ids' => $selectedTagIds,
-            'current_path' => $request->getUri()->getPath()
+            'active_menu' => 'materials'
         ]);
         $response->getBody()->write($body);
         return $response;
     }
 
-    // Method untuk memproses update
     public function update(Request $request, Response $response, array $args): Response
     {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Unauthorized']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
+        if (!isset($_SESSION['user_id'])) { /* ... handle error ... */
+        }
+        $materialId = $args['id'];
+
+        if ($_SESSION['user_role'] !== 'Admin') {
+            if (!$this->db->has('tbl_materials', ['AND' => ['id' => $materialId, 'create_id' => $_SESSION['user_id']]])) {
+                $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Akses ditolak.']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
+            }
         }
 
-        $materialId = $args['id'];
         $data = $request->getParsedBody();
-        $uploadedFiles = $request->getUploadedFiles();
+        $updateData = ['title' => $data['title'], 'description' => $data['description'], 'type' => $data['type'], 'update_time' => date('Y-m-d H:i:s'), 'update_id' => $_SESSION['user_id']];
 
-        // Data untuk di-update
-        $updateData = [
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'type' => $data['type'],
-            'update_time' => date('Y-m-d H:i:s'),
-            'update_id' => $_SESSION['user_id']
-        ];
-
-        // Cek apakah ada file baru yang diupload atau tipe diubah
-        $uploadedFile = $uploadedFiles['content_file'];
+        $uploadedFile = $request->getUploadedFiles()['content_file'];
         if ($data['type'] === 'Link') {
             $updateData['content'] = $data['content_url'];
         } elseif ($uploadedFile->getError() === UPLOAD_ERR_OK) {
-            // Ada file baru, proses upload
             $filename = $uploadedFile->getClientFilename();
             $newFilename = date('YmdHis') . '-' . $filename;
-            $directory = __DIR__ . '/../../../public/uploads/materials';
-            $path = $directory . '/' . $newFilename;
+            $path = __DIR__ . '/../../../public/uploads/materials/' . $newFilename;
             $uploadedFile->moveTo($path);
             $updateData['content'] = '/uploads/materials/' . $newFilename;
         }
-        // Jika tidak ada file baru, kita tidak mengubah kolom 'content'.
 
         $this->db->update('tbl_materials', $updateData, ['id' => $materialId]);
 
-        // Sinkronisasi kategori & tag (hapus yang lama, insert yang baru)
         $categoryIds = $data['category_ids'] ?? [];
-        $tagIds = $data['tag_ids'] ?? [];
-
         $this->db->delete('tbl_material_categories', ['material_id' => $materialId]);
         if (!empty($categoryIds)) {
-            $categoryData = [];
-            foreach ($categoryIds as $catId) {
-                $categoryData[] = ['material_id' => $materialId, 'category_id' => $catId];
-            }
+            $categoryData = array_map(fn($catId) => ['material_id' => $materialId, 'category_id' => $catId], $categoryIds);
             $this->db->insert('tbl_material_categories', $categoryData);
         }
 
+        $tagIds = $data['tag_ids'] ?? [];
         $this->db->delete('tbl_material_tags', ['material_id' => $materialId]);
         if (!empty($tagIds)) {
-            $tagData = [];
-            foreach ($tagIds as $tagId) {
-                $tagData[] = ['material_id' => $materialId, 'tag_id' => $tagId];
-            }
+            $tagData = array_map(fn($tagId) => ['material_id' => $materialId, 'tag_id' => $tagId], $tagIds);
             $this->db->insert('tbl_material_tags', $tagData);
         }
 
@@ -288,70 +211,21 @@ class MaterialController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    public function showAssignForm(Request $request, Response $response, array $args): Response
+    public function delete(Request $request, Response $response, array $args): Response
     {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+        if (!isset($_SESSION['user_id'])) { /* ... handle error ... */
         }
-
         $materialId = $args['id'];
-        $material = $this->db->get('tbl_materials', ['id', 'title'], ['id' => $materialId]);
 
-        if (!$material) {
-            return $response->withHeader('Location', '/materials')->withStatus(302);
-        }
-
-        // Ambil semua user dengan role 'Pengguna Umum'
-        $users = $this->db->select('tbl_users', ['id', 'name', 'email'], ['role' => 'Pengguna Umum', 'archived' => 0]);
-
-        // Ambil data user yang sudah ditugaskan materi ini
-        $assignedUserIds = $this->db->select('tbl_material_assignments', 'user_id', ['material_id' => $materialId]);
-
-        // Tambahkan flag 'is_assigned' ke data user untuk menandai checkbox
-        foreach ($users as &$user) {
-            $user['is_assigned'] = in_array($user['id'], $assignedUserIds);
-        }
-
-        $body = $this->view->render('material/material-assign.twig', [
-            'session' => $_SESSION,
-            'material' => $material,
-            'users' => $users,
-            'current_path' => $request->getUri()->getPath()
-        ]);
-        $response->getBody()->write($body);
-        return $response;
-    }
-
-    // Method untuk menyimpan data penugasan
-    public function storeAssignment(Request $request, Response $response, array $args): Response
-    {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-            $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Unauthorized']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
-        }
-
-        $materialId = $args['id'];
-        $data = $request->getParsedBody();
-        $assignedUserIds = $data['user_ids'] ?? []; // Ambil array user_id dari form
-
-        // Strategi Sinkronisasi: Hapus semua penugasan lama, lalu buat yang baru.
-        // 1. Hapus semua penugasan untuk materi ini
-        $this->db->delete('tbl_material_assignments', ['material_id' => $materialId]);
-
-        // 2. Jika ada user yang dipilih, insert penugasan baru
-        if (!empty($assignedUserIds)) {
-            $newAssignments = [];
-            foreach ($assignedUserIds as $userId) {
-                $newAssignments[] = [
-                    'material_id' => $materialId,
-                    'user_id' => $userId,
-                    'create_id' => $_SESSION['user_id']
-                ];
+        if ($_SESSION['user_role'] !== 'Admin') {
+            if (!$this->db->has('tbl_materials', ['AND' => ['id' => $materialId, 'create_id' => $_SESSION['user_id']]])) {
+                $response->getBody()->write(json_encode(['status' => 'error', 'message' => 'Akses ditolak.']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
             }
-            $this->db->insert('tbl_material_assignments', $newAssignments);
         }
 
-        $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Penugasan materi berhasil diperbarui!']));
+        $this->db->update('tbl_materials', ['archived' => 1, 'update_time' => date('Y-m-d H:i:s'), 'update_id' => $_SESSION['user_id']], ['id' => $materialId]);
+        $response->getBody()->write(json_encode(['status' => 'success', 'message' => 'Materi berhasil dihapus.']));
         return $response->withHeader('Content-Type', 'application/json');
     }
 

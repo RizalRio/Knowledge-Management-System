@@ -95,14 +95,25 @@ $(function () {
         {
             "data": "id",
             "render": function(data, type, row) {
-                // Buat tombol aksi
+                // Logika untuk menampilkan tombol berdasarkan role
+                let assignButton = '';
+
+                // Hanya tampilkan tombol ini jika role-nya Admin
+                {% if session.user_role == 'Admin' %}
+                    assignButton = `<a href="/materials/assign/${data}" class="btn btn-info btn-xs" title="Tugaskan"><i class="fas fa-user-plus"></i></a>`;
+                {% endif %}
+
+                // Gabungkan semua tombol yang diizinkan
                 return `
-                    <a href="/materials/assign/${data}" class="btn btn-info btn-xs" title="Tugaskan"><i class="fas fa-user-plus"></i></a>
-                    <a href="/materials/edit/${data}" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
-                    <button class="btn btn-danger btn-xs" onclick="deleteMaterial(${data})" title="Hapus"><i class="fas fa-trash"></i></button>
+                    <div class="btn-group">
+                        ${assignButton}
+                        <a href="/materials/edit/${data}" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
+                        <button class="btn btn-danger btn-xs" onclick="deleteMaterial(${data})" title="Hapus"><i class="fas fa-trash"></i></button>
+                    </div>
                 `;
             },
-            "orderable": false // Kolom aksi tidak perlu bisa di-sort
+            "orderable": false,
+            "searchable": false
         }
     ],
     "responsive": true, 

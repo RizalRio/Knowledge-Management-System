@@ -119,6 +119,14 @@
 											<p>Kelola Pengguna</p>
 										</a>
 									</li>
+								{% elseif session.user_role == 'Kontributor' %}
+									<li class="nav-header">KONTEN SAYA</li>
+									<li class="nav-item">
+										<a href="/materials" class="nav-link {{ active_menu == 'materials' ? 'active' : '' }}">
+											<i class="nav-icon fas fa-book"></i>
+											<p>Materi Saya</p>
+										</a>
+									</li>
 								{% endif %}
 								<li class="nav-item">
 									<a href="/logout" class="nav-link">
