@@ -23,7 +23,7 @@
     <table id="materials-table" class="table table-bordered table-striped">
       <thead>
       <tr>
-        <th>ID</th>
+        <th>No</th>
         <th>Judul Materi</th>
         <th>Kategori & Tag</th>
         <th>Tipe</th>
@@ -56,7 +56,10 @@ $(function () {
         "type": "GET"
     },
     "columns": [
-        { "data": "id" },
+        { "data": null,
+            "render": function(data, type, row, meta) {
+                return meta.row + 1; }, 
+        },
         { "data": "title" },
         { 
             "data": null, // Kita akan buat kontennya secara manual

@@ -18,7 +18,7 @@
     <table id="feedbacks-table" class="table table-bordered table-striped">
       <thead>
       <tr>
-        <th>ID</th>
+        <th>No</th>
         <th>Judul Materi</th>
         <th>Dari Pengguna</th>
         <th>Isi Feedback</th>
@@ -52,7 +52,10 @@ $(function () {
         "type": "GET"
     },
     "columns": [
-        { "data": "id" },
+        { "data": null,
+            "render": function(data, type, row, meta) {
+                return meta.row + 1; },
+        },
         { "data": "material_title" },
         { "data": "user_name" },
         { 
