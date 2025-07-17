@@ -217,7 +217,8 @@ class MaterialController
             'categories' => $this->db->select('tbl_categories', ['id', 'name'], ['archived' => 0]),
             'tags' => $this->db->select('tbl_tags', ['id', 'name'], ['archived' => 0]),
             'selected_category_ids' => $selectedCategoryIds,
-            'selected_tag_ids' => $selectedTagIds
+            'selected_tag_ids' => $selectedTagIds,
+            'current_path' => $request->getUri()->getPath()
         ]);
         $response->getBody()->write($body);
         return $response;

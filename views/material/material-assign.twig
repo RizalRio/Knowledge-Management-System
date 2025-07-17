@@ -2,6 +2,11 @@
 
 {% block title %}Tugaskan Materi{% endblock %}
 {% block page_title %}Tugaskan Materi: {{ material.title }}{% endblock %}
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+    <li class="breadcrumb-item"><a href="/materials">Kelola Materi</a></li>
+    <li class="breadcrumb-item active">Tugaskan Materi</li>
+{% endblock %}
 
 {% block content %}
 <div class="card card-info">

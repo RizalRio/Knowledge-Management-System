@@ -2,6 +2,11 @@
 
 {% block title %}{{ material.title }}{% endblock %}
 {% block page_title %}Materi: {{ material.title }}{% endblock %}
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+    <li class="breadcrumb-item"><a href="/materials">Kelola Materi</a></li>
+    <li class="breadcrumb-item active">{{ material.title }}</li>
+{% endblock %}
 
 {# CSS untuk styling bintang #}
 {% block head_styles %}
